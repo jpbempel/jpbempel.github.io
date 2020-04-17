@@ -1,4 +1,4 @@
-## Welcome to Jean-Philippe Bempel Blog
+## Jean-Philippe Bempel's Blog
 
 <ul>
   {% for post in site.posts %}
