@@ -1,8 +1,8 @@
 ---
-title:  "Volatile"
+title:  "How to print disassembly from JIT Code?"
 layout: default
 ---
-In my previous post, I have shown you some disassembly from JIT native code. How to do the same at home ?
+In my previous post, I have shown you some disassembly from JIT native code. How to do the same at home?
 
 I found relevant informations in this [wiki page](https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly).
 
