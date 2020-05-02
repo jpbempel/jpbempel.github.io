@@ -1,3 +1,7 @@
+---
+title:  "Volatile"
+layout: default
+---
 In my previous post, I have shown you some disassembly from JIT native code. How to do the same at home ?
 
 I found relevant informations in this [wiki page](https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly).
@@ -32,4 +36,4 @@ Code:
 ```
 Enjoy !
 
-**Updated**: To get intel syntax over AT&T, use -XX:PrintAssemblyOptions=intel
+**Updated**: To get intel syntax over AT&T, use `-XX:PrintAssemblyOptions=intel`
