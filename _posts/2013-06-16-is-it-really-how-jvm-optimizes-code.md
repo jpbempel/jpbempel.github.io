@@ -93,7 +93,7 @@ With `PrintAssembly` option, here is the native code of bench method:
                                         ;   {poll_return}
   0x02487370: ret   
 ```
-It seems that the doSomething method was inlined and replaced by the `"Hello World"` string instead. The java code equivalent is actually:
+It seems that the `doSomething` method was inlined and replaced by the `"Hello World"` string instead. The java code equivalent is actually:
 ```java
 public void bench()
 {
