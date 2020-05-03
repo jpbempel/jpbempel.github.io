@@ -1,3 +1,7 @@
+---
+title:  "The useful JVM options"
+layout: default
+---
 # The useful JVM options
 *This post relates to JDK6 at the time of writing* 
 
