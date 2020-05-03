@@ -1,12 +1,14 @@
 # The useful JVM options
+*This post relates to JDK6 at the time* 
+
 HotSpot JVM has a lot of options available. Maybe too much. Sometimes we are looking for the right options, or the "magic" one that can give you a serious boost on your application. Unfortunately, I think it does not exist ! However some can help you for monitoring your application or for tuning some parts.
 
-To find the complete list of options you will find in the globals.hpp file from OpenJDK sources.
+To find the complete list of options you will find in the globals.hpp file from OpenJDK sources. Or use this website
 This site however can help you to navigate through the list.
 
 I have summed up  here, in my humble opinion, some of the most usefull JVM options.
 
-Heap sizing
+## Heap sizing
 You perfectly konw -Xms -Xms options (that can also abbreviate by -ms -mx), but some parts of the Java heap and non-heap can also be sized:
 
 -XX:NewSize=n Defines the initial size of the Young generation, including Eden, & Survivors. 
