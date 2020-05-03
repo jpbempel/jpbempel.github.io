@@ -16,7 +16,7 @@ Each object has at least 2 words (2x4 Bytes for 32 bits & 2x8 Bytes for 64 bits,
 First word is known as **Mark Word**. This is the header of the object and it contains different information, including locking ones.
 Second word is a pointer to metadata class defining the type of this object. This includes also the VMT (Virtual Method Table, cf [Virtual Call 911](https://jpbempel.github.io/2012/10/24/virtual-call-911.html)).
 
-The Mark Word can be summarized by this table (1):
+The Mark Word can be summarized by this table [1]:
 
 ![](/assets/2013/03/MarkWord.png)
 
@@ -172,10 +172,10 @@ We have the following output for disassembly:
 Highlighted in green, the path executed when we acquired successfully the lock. Notice again the main instruction `lock cmpxchg`.
 
 ## Conclusion
-Except for biased version, other versions are similar. so here no clear winner for what is the fastest lock.
+Except for biased version, other versions are similar. So here no clear winner for what is the fastest lock.
 Biased locking seems very efficient here, but at a high cost of a safepoint if revoked.
-ReentrantLock is more stable in terms of execution since there is no special optimization beside the intrinsic form of CompareAndSwap operation.
+`ReentrantLock` is more stable in terms of execution since there is no special optimization beside the intrinsic form of `CompareAndSwap` operation.
 
 In any case you can notice that there is overhead by using lock, even in best case when there is no contention.
 
-(1) From Presentation: The Hotspot Virtual Machine by Paul Hohensee
+[1] From presentation: [The Hotspot Virtual Machine](https://www.cs.princeton.edu/picasso/mats/HotspotOverview.pdf) by Paul Hohensee
