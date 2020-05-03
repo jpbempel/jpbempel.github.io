@@ -83,8 +83,9 @@ EnableBiasedLocking                1
     0 VM operations coalesced during safepoint
 Maximum sync time      0 ms
 Maximum vm operation time (except for Exit VM operation)      0 ms
-
-As you can see, after 4 seconds there is a VM operation EnabledBiasedLocking which requires a safepoint to be executed. As mentioned in one of my previous post about locks, this operation is performed for biased locking optimization. If we deactivate this kind of optimization (-XX:-UseBisaedLocking), we have now our call method compiled:
+```
+As you can see, after 4 seconds there is a VM operation EnabledBiasedLocking which requires a safepoint to be executed. As mentioned in one of my previous post about locks, this operation is performed for biased locking optimization. If we deactivate this kind of optimization (`-XX:-UseBisaedLocking`), we have now our call method compiled:
+```
 ---   n   java.lang.System::currentTimeMillis (static)
   1       com.bempel.sandbox.TestJIT::call (17 bytes)
 ---   n   java.lang.Thread::sleep (static)
@@ -117,7 +118,7 @@ public static void main(String[] args) throws Exception
 ```
 Again, the method call is not getting compiled here. In fact no method are compiled!
 
-During each safepoint, a special process is also invoked: CounterDecay. It divides by 2 the number of method invocations for a small percentage (around 17%) of the classes.
+During each safepoint, a special process is also invoked: [CounterDecay](https://github.com/openjdk/jdk/blob/18c01206d00b2d368f737345a5b615bd14743b24/src/hotspot/share/compiler/compilationPolicy.cpp#L218). It divides by 2 the number of method invocations for a small percentage (around 17%) of the classes.
 This mechanism is here to balance "Hot Spots" not only based on number of invocations but alos based on time (indirectly by safepoints/GC).
 
 Hopefully this mechanism can be disabled with `-XX:-UseCounterDecay`
