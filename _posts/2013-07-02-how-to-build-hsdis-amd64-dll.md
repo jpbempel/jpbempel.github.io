@@ -1,3 +1,4 @@
+# How to build hsdis-amd64.dll?
 If you read my post on [How to print disassembly from JIT code?](http://jpbempel.blogspot.com/2012/10/how-to-print-dissasembly-from-jit-code.html), you will find that one file is missing to download: hsdis-am64.dll. It is required to disassemble JIT code with windows 64 bits version of JDK.
 Until now, I have always shown you disassemble code from 32bits (i386) because I was not able to find a pre-built version or recompile it my self.
 
