@@ -95,7 +95,9 @@ List of pre-defined events (to be used in -e):
 ```
 So you can for example specify one of those events during executing your command:
 
-`perf stat -e dTLB-load-misses ls -lR`
+```
+perf stat -e dTLB-load-misses ls -lR
+```
 ```
  Performance counter stats for 'ls -lR':
 
@@ -186,6 +188,6 @@ Hardware performance counters provided by CPU can be valuable to understand why 
 In the next posts we will use this technique for various examples.
 
 ## References
-Overseer library: http://www.peternier.com/projects/overseer/overseer.php
-libpfm: http://perfmon2.sourceforge.net/docs_v4.html
-Intel Software Developper's manual Volume 3B: http://download.intel.com/products/processor/manual/253669.pdf
+* Overseer library: http://www.peternier.com/projects/overseer/overseer.php
+* libpfm: http://perfmon2.sourceforge.net/docs_v4.html
+* Intel Software Developper's manual Volume 3B: http://download.intel.com/products/processor/manual/253669.pdf
