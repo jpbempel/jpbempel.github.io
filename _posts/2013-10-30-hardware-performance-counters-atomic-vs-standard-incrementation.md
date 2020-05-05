@@ -4,17 +4,19 @@ layout: default
 ---
 
 # Hardware Performance Counters: atomic vs standard incrementation
-In a previous post on Hardware  Performance Counters, I have said that the main problem of the perf command is that only program from command line can be monitored like this.
+In a previous post on [Hardware  Performance Counters](https://jpbempel.github.io/2013/08/02/hardware-performance-counters.html), I have said that the main problem of the perf command is that only program from command line can be monitored like this.
 It means when you want to monitor HPC for Java program you will also monitor the JVM and the startup phase, including warmup. Obviously it will affect negatively the performance compared to the steady state of the application when the code is JITed.
 
-The perfect illustration of this flaw is presented in this blog post. In an attempt to understand the cost of a memory barrier, the author use the perf command in a micro-benchmark comparing simple incrementation of a regular variable to an incremention of an AtomicInteger. The author is fully aware of this methodlogy contains flaws:
+The perfect illustration of this flaw is presented in this [blog post](http://brooker.co.za/blog/2012/11/13/increment.html). In an attempt to understand the cost of a memory barrier, the author use the perf command in a micro-benchmark comparing simple incrementation of a regular variable to an incremention of an AtomicInteger. The author is fully aware of this methodlogy contains flaws:
 
-We must be careful interpreting these results, because they are polluted with data not related to our program under test, like the JVM startup sequence.
+> We must be careful interpreting these results, because they are polluted with data not related to our program under test, like the JVM startup sequence.
+
 To avoid this bias in the micro-benchmark we can use the HPC more precisely with the help of the overseer library presented in my previous post.
+
 I have written a similar micro-benchmark with overseer and try to eliminate all the startup & warmup bias when measuring.
 
 Here the code:
-
+```java
 import ch.usi.overseer.OverHpc;
 import java.util.concurrent.atomic.AtomicInteger;
  
@@ -128,11 +130,11 @@ public class Increment
         OverHpc.shutdown();
    }
 }
-
-Depending on the argument I call 2 times the method performing the loop to make sure everything is compiled before starting the counters. With -XX:+PrintCompilation I verify this.
+```
+Depending on the argument I call 2 times the method performing the loop to make sure everything is compiled before starting the counters. With `-XX:+PrintCompilation` I verify this.
 
 So now we can run it and compare the raw results for 3 runs each:
-
+```
 [root@archi-srv myths]# java -cp .:overseer.jar Increment atomic
 warmup done
 Cycles: 150,054,450
@@ -200,16 +202,16 @@ LLC misses: 0
 CPU migrations: 0
 Local DRAM: 0
 Remote DRAM: 0
-
+```
 As you can see, they are differences:
-more cycles for atomic version
-more instructions for atomic versions
-a little bit more L2 misses for std versions
-more LLC hits for std versions
-Local DRAM accesses for atomic versions
+* more cycles for atomic version
+* more instructions for atomic versions
+* a little bit more L2 misses for std versions
+* more LLC hits for std versions
+* Local DRAM accesses for atomic versions
 We can also noticed than for atomic version we have roughly 3 cycles per instruction and for std version 3 instructions for 1 cycle...
 
 Still, conclusion remains the same. we spend more instructions & more cycles with atomic version. We also have more accesses from DRAM which have significant more latency that caches.
-But now ,we are sure that those measurements are more accurate than including the warmup phase.
+But now, we are sure that those measurements are more accurate than including the warmup phase.
 
 Stay tuned for another adventure in HPC land...
