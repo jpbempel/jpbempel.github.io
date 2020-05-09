@@ -2,6 +2,8 @@
 title: "Measuring contention on locks"
 layout: default
 ---
+# Measuring contention on locks
+
 Locks is one of the major bottleneck in scalability for your code. Lock-Free structures offer an alternative to your lock usage. However it is sometimes more difficult to use or to integrate into your existing code. Before rushing into this specific approach, it would be interesting to determine which part of your locking code would really benefit from this. Locks become a bottleneck if more than one thread tries to acquire them and needs to wait for a release. This is contention. Measuring this contention will help us to pinpoint which locks need to be improved.
 
 You see in this Java world there are two kinds of locks. Those with synchronized blocks, and those which use java.util.concurrent.Lock. The first ones are directly handled by the JVM with the help of a specific byte code (`monitorenter` & `monitorexit`). With those, JVM provides, via JVMTI, some events that can be used by native agents to get information about synchronized blocks: `MonitorContendedEnter` & `MonitorContentedEntered`.
