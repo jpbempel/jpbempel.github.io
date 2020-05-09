@@ -2,6 +2,7 @@
 title: "ArrayList vs LinkedList"
 layout: default
 ---
+# ArrayList vs LinkedList
 
 *This post was originally posted on [Java Advent Calendar](http://www.javaadvent.com/2013/12/arraylist-vs-linkedlist.html)*
 
