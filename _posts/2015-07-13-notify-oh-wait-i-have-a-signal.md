@@ -31,8 +31,8 @@ Knowing that, what is the cost of calling notify for a producer thread ?
 
 ## Measure, don't guess!
 Why not building a micro-benchmark ? Because I do not care about average latency, I care about outliers, spikes. How it behaves for 50, 90, 95, 99, 99.9 % of the time.  What may be the maximum I can observe?
-Let's measure it with HdrHistorgram from Gil Tene and the following code:
-
+Let's measure it with [HdrHistorgram](http://hdrhistogram.github.io/HdrHistogram/) from [Gil Tene](https://twitter.com/giltene) and the following code:
+```java
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -172,13 +172,13 @@ public class TestNotify
         }
     }
 }
-view rawgistfile1.java hosted with ❤ by GitHub
-
+```
 
 This code basically creates n pairs of threads: one (critical) which trying to notify the second (flushing) that data are available to be processed (or flushed).
-I run this code with following parameters 16 1000. It means that we have 16 pairs of threads that doing wait/notify.
+I run this code with following parameters `16 1000`. It means that we have 16 pairs of threads that doing `wait`/`notify`.
 
 Results on Windows (ns):
+```
 count: 16000
 min: 0
 max: 55243
@@ -188,12 +188,12 @@ mean: 549.5238125
 95%: 1812
 99%: 3019
 99.9%: 11472
+```
 
-
-
-
+![win](/assets/2015/07/NotifyHistogram_win.png)
 
 Results on Linux (ns):
+```
 count: 16000
 min: 69
 max: 20906
@@ -203,15 +203,16 @@ mean: 1535.5181875
 95%: 1888
 99%: 2056
 99.9%: 3175
+```
 
-
-
+![](/assets/2015/07/NotifyHistogram_linux.png)
 
 So most of the time we can observe couple of microseconds for a call to notify. But in some cases we can reach 50us! For Low Latency systems it can be an issue and a source of outliers.
 
 Now, if we push a little our test program to use 256 pairs of threads we end up with the following results:
 
 Results on Windows (ns):
+```
 count: 256000
 min: 0
 max: 1611088
@@ -221,8 +222,10 @@ mean: 442.25016015625
 95%: 1208
 99%: 1811
 99.9%: 2717
+```
 
 Results on Linux (ns):
+``` 
 count: 256000
 min: 68
 max: 1590240
@@ -232,14 +235,15 @@ mean: 1883.61266015625
 95%: 2714
 99%: 7762
 99.9%: 15230
+``` 
 
 A notify call can take 1.6ms!
 
 Even though there is no contention in this code per se, there is another kind of contention that happens in the kernel. Scheduler needs to arbitrate which thread can be run. Having 256 threads that trying to wake up their partner thread put a lot of pressure on the scheduler which become a bottleneck here.
 
-Conclusion
+## Conclusion
 Signaling can be a source of outliers not because we have contention on executing code between threads but because the OS scheduler needs to arbitrate among those threads, responding to wake up requests.
 
 References
-[1] Futex are tricky U. Drepper: http://www.akkadia.org/drepper/futex.pdf
-[2] http://en.wikipedia.org/wiki/System_call#Processor_mode_and_context_switching
+* Futex are tricky U. Drepper: http://www.akkadia.org/drepper/futex.pdf
+* http://en.wikipedia.org/wiki/System_call#Processor_mode_and_context_switching
