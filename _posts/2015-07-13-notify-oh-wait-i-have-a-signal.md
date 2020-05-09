@@ -244,6 +244,6 @@ Even though there is no contention in this code per se, there is another kind of
 ## Conclusion
 Signaling can be a source of outliers not because we have contention on executing code between threads but because the OS scheduler needs to arbitrate among those threads, responding to wake up requests.
 
-References
+## References
 * Futex are tricky U. Drepper: http://www.akkadia.org/drepper/futex.pdf
 * http://en.wikipedia.org/wiki/System_call#Processor_mode_and_context_switching
