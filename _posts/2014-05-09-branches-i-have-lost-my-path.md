@@ -2,6 +2,7 @@
 title: "Branches: I have lost my path!"
 layout: default
 ---
+# Branches: I have lost my path!
 
 At Devoxx France 2014, I made a talk about [Hardware Performance Counters](https://jpbempel.github.io/2013/08/02/hardware-performance-counters.html), including examples I had already blogged about previously ([first](https://jpbempel.github.io/2013/10/30/hardware-performance-counters-atomic-vs-standard-incrementation.html) & [second](https://jpbempel.github.io/2013/12/17/arraylist-vs-linkedlist.html)). But I have also included a third one showing branch mispredictions measurement and effects.
 
