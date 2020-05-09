@@ -120,4 +120,4 @@ What is important to keep in mind is that you cannot miss a ticket. This is why 
 The implementation is open sourced on [GitHub](https://github.com/Ullink/ordered-scheduler).
 
 ## References
-https://software.intel.com/en-us/articles/exploiting-data-parallelism-in-ordered-data-streams
+[Exploiting Data Parallelism in Ordered Data Streams](https://software.intel.com/en-us/articles/exploiting-data-parallelism-in-ordered-data-streams)
