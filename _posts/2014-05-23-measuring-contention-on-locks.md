@@ -1,5 +1,5 @@
 ---
-title: "measuring contention on locks"
+title: "Measuring contention on locks"
 layout: default
 ---
 Locks is one of the major bottleneck in scalability for your code. Lock-Free structures offer an alternative to your lock usage. However it is sometimes more difficult to use or to integrate into your existing code. Before rushing into this specific approach, it would be interesting to determine which part of your locking code would really benefit from this. Locks become a bottleneck if more than one thread tries to acquire them and needs to wait for a release. This is contention. Measuring this contention will help us to pinpoint which locks need to be improved.
