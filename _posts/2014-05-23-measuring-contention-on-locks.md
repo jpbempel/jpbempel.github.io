@@ -7,21 +7,18 @@ Locks is one of the major bottleneck in scalability for your code. Lock-Free str
 You see in this Java world there are two kinds of locks. Those with synchronized blocks, and those which use java.util.concurrent.Lock. The first ones are directly handled by the JVM with the help of a specific byte code (`monitorenter` & `monitorexit`). With those, JVM provides, via JVMTI, some events that can be used by native agents to get information about synchronized blocks: `MonitorContendedEnter` & `MonitorContentedEntered`.
 Profilers like YourKit exploit this information to provide contention profiling.
 
-
-
+![YourKit](/assets/2014/05/YourKitProfSync.png)
 
 Azul Systems provides with their Zing JVM a tool named ZVision to also profile the synchronized blocks:
 
-AzulZvision_syncLocks.png
+![Azul Zvision](/assets/2014/05/AzulZvision_syncLocks.png)
 
 But what about `j.u.c.Lock`?
 
 Here, this is trickier: `j.u.c.Lock` is not handled by the JVM. It is part of the JDK classes like any regular library. No special treatment. Hence, no special information about them.
 YourKit is not able to profile them. However, another profiler which is able to profile `j.u.c.Lock` exists: JProfiler.
 
-JProfiler_SyncLocks.png
-
-JProfiler_jucLocks.png
+![JProfiler](/assets/2014/05/JProfiler_jucLocks.png)
 
 I suppose it uses instrumentation to insert callbacks when `j.u.c.Lock` classes are used. Profile information seems precise with callstacks. It helps to identify which locks are effectively in contention.
 
