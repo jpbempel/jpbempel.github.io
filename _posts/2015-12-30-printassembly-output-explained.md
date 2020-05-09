@@ -53,13 +53,15 @@ For more information see this [guide](http://www.cs.virginia.edu/~evans/cs216/gu
 
 ## Disassembler comments
 Hopefully, disassembler plugin does not spit raw instructions but annotate them with useful information.
-Let's take an example with the method ArrayList.add(Object) and analyze it:
+Let's take an example with the method `ArrayList.add(Object)` and analyze it:
+```java
         public boolean add(E e) {
 L458        ensureCapacityInternal(size + 1);  // Increments modCount!!
 L459        elementData[size++] = e;
             return true;
         }
-view rawArrayList.add.java hosted with ❤ by GitHub
+```
+```
   # {method} {0x000000000ac640f8} 'add' '(Ljava/lang/Object;)Z' in 'java/util/ArrayList'
   # this:     rdx:rdx   = 'java/util/ArrayList'
   # parm0:    r8:r8     = 'java/lang/Object'
@@ -146,52 +148,57 @@ view rawArrayList.add.java hosted with ❤ by GitHub
                                                 ; - java.util.ArrayList::ensureExplicitCapacity@-1 (line 231)
                                                 ; - java.util.ArrayList::ensureCapacityInternal@19 (line 227)
                                                 ; - java.util.ArrayList::add@7 (line 458)
-view rawArrayList_add.asm hosted with ❤ by GitHub
+```
 
-Header
+### Header
 In the header we can find the following information:
+``` 
 # {method} {0x000000000ac640f8} 'add' '(Ljava/lang/Object;)Z' in 'java/util/ArrayList'
 # this:     rdx:rdx   = 'java/util/ArrayList'
 # parm0:    r8:r8     = 'java/lang/Object'
 #           [sp+0x40]  (sp of caller)
-view rawArrayList_add.header.asm hosted with ❤ by GitHub
-The first line is the name of the method disassembled: 'add' with its signature: one parameter of type Object returning a boolean from the class java.util.ArrayList
+```
+The first line is the name of the method disassembled: `'add'` with its signature: one parameter of type `Object` returning a `boolean` from the class `java.util.ArrayList`
 But as this is a instance method there is in fact 2 parameters as mentioned in the rest of the header:
-Parameter this which is stored in register rdx, and the Object parameter in register r8.
+Parameter this which is stored in register `rdx`, and the `Object` parameter in register `r8`.
 
 
-Verified Entry Point
+### Verified Entry Point
+```
   0x0000000002d2a774: nop    DWORD PTR [rax+rax*1+0x0]
   0x0000000002d2a77c: data32 data32 xchg ax,ax
 [Verified Entry Point]
-view rawArrayList_add.EntryPoint.asm hosted with ❤ by GitHub
-After the header the first instructions of the methods begins after the [Verified entry point]section. Assembly before this mark is here for alignment (padding). Starting from this section, we will look at comments that are after the semi-colon. Comments that are starting with the star (*)  indicates the associated byte code.
+```
+After the header the first instructions of the methods begins after the `[Verified entry point]` section. Assembly before this mark is here for alignment (padding). Starting from this section, we will look at comments that are after the semi-colon. Comments that are starting with the star (`*`)  indicates the associated byte code.
 
-Synchronization Entry
+### Synchronization Entry
+```
 0x0000000002d2a780: mov    DWORD PTR [rsp-0x6000],eax
 0x0000000002d2a787: push   rbp
 0x0000000002d2a788: sub    rsp,0x30           ;*synchronization entry
                                               ; - java.util.ArrayList::add@-1 (line 458)
-view rawArrayList_add.SyncEntry.asm hosted with ❤ by GitHub
-The following comment: ; - java.util.ArrayList::add@-1 (line 458)gives us the mapping to the Java code: class name, method name and bytecode offset into the method, and finally the line number into the original Java source file. For this prologue, as we do not have a specific bytecode associated we've got the -1 offset. For the first one: ;*synchronization entry, it indicates the prologue of the function: some instructions that are necessary to prepare the execution (stack allocation or stack banging, saving some registers, ...)
+```
+The following comment: `; - java.util.ArrayList::add@-1 (line 458)` gives us the mapping to the Java code: class name, method name and bytecode offset into the method, and finally the line number into the original Java source file. For this prologue, as we do not have a specific bytecode associated we've got the -1 offset. For the first one: `;*synchronization entry`, it indicates the prologue of the function: some instructions that are necessary to prepare the execution (stack allocation or [stack banging](https://blogs.oracle.com/dns/entry/stacks_with_split_personalities), saving some registers, ...)
 
-
-Get size field
+### Get size field
+``` 
 0x0000000002d2a78c: mov    QWORD PTR [rsp+0x8],r8
 0x0000000002d2a791: mov    rbp,rdx
 0x0000000002d2a794: mov    r9d,DWORD PTR [rdx+0x10]  ;*getfield size
                                               ; - java.util.ArrayList::add@2 (line 458)
-view rawArrayList_add.GetFieldSize.asm hosted with ❤ by GitHub
-Next comment retrieves the field named from the current instance (ArrayList). It is translated to the following assembly line: mov r9d,DWORD PTR [rdx+0x10]
-it moves into r9 register the content of the address rdx (this instance, cf method parameter) + 0x10 offset where the size field is located.
+``` 
+Next comment retrieves the field named from the current instance (`ArrayList`). It is translated to the following assembly line: `mov r9d,DWORD PTR [rdx+0x10]`
+It moves into `r9` register the content of the address `rdx` (this instance, cf method parameter) `+ 0x10` offset where the size field is located.
 
-Get elementData field
+### Get elementData field
+```
 0x0000000002d2a798: mov    r11d,DWORD PTR [rdx+0x14]
                                   ;*getfield elementData
                                   ; - java.util.ArrayList::ensureCapacityInternal@1 (line 223)
                                   ; - java.util.ArrayList::add@7 (line 458)
-view rawArrayList_add.GetFieldElementData.asm hosted with ❤ by GitHub
-The following comment is interesting because we have the same type of bytecode getfield but the mapping to the Java code involved 2 methods: java.util.ArrayList::ensureCapacityInternal@1 (line 223)and java.util.ArrayList::add@7 (line 458). Implicitly, it means that the JIT has inlined the first method mentionned and the byte code come from this method.
+``` 
+The following comment is interesting because we have the same type of bytecode getfield but the mapping to the Java code involved 2 methods: `java.util.ArrayList::ensureCapacityInternal@1 (line 223)` and `java.util.ArrayList::add@7 (line 458)`. Implicitly, it means that the JIT has inlined the first method mentionned and the byte code come from this method.
+```java
         private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
     
         private void ensureCapacityInternal(int minCapacity) {
@@ -201,47 +208,50 @@ L223        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
             
 L227        ensureExplicitCapacity(minCapacity);
         }
-    
-view rawArrayList.ensureCapacityInternal.java hosted with ❤ by GitHub
+``` 
 
-
-Empty array test
+### Empty array test
+``` 
 0x0000000002d2a7a2: cmp    r11d,0xd5d0e088    ;   {oop(a 'java/lang/Object'[0] )}
 0x0000000002d2a7a9: je     0x0000000002d2a861 ;*if_acmpne
                                   ; - java.util.ArrayList::ensureCapacityInternal@7 (line 223)
                                   ; - java.util.ArrayList::add@7 (line 458)
-view rawArrayList_add.TestEmptyArray.asm hosted with ❤ by GitHub
-{oop(a 'java/lang/Object'[0])}indicates an instance (oop) with the following type 'java/lang/Object'[0]'. It means object array. This is in fact the constant instance empty array against which we are comparing inside the inlined method ensureCapacityInternal.
+``` 
+`{oop(a 'java/lang/Object'[0])}` indicates an instance (oop) with the following type `'java/lang/Object'[0]'`. It means object array. This is in fact the constant instance empty array against which we are comparing inside the inlined method `ensureCapacityInternal`.
 
-More inlining
+### More inlining
+``` 
 0x0000000002d2a7af: inc    DWORD PTR [rdx+0xc]  ;*putfield modCount
                                 ; - java.util.ArrayList::ensureExplicitCapacity@7 (line 231)
                                 ; - java.util.ArrayList::ensureCapacityInternal@19 (line 227)
                                 ; - java.util.ArrayList::add@7 (line 458)
-view rawArrayList_add.MoreInlining.asm hosted with ❤ by GitHub
-Here we have an additional level of inlining for the ensureExplicitCapacity method.
+```
+Here we have an additional level of inlining for the `ensureExplicitCapacity` method.
+```java
         private void ensureExplicitCapacity(int minCapacity) {
 L231        modCount++;
             // overflow-conscious code
             if (minCapacity - elementData.length > 0)
 L234            grow(minCapacity);
         }
-view rawArrayList.ensureExplicitCapacity.java hosted with ❤ by GitHub
+```
 
-
-Implicit null check
+### Implicit null check
+```
 0x0000000002d2a7b2: mov    r10d,DWORD PTR [r11+0xc]  ; implicit exception: dispatches to 0x0000000002d2a881
-view rawArrayList_add.ImplicitNullCheck.asm hosted with ❤ by GitHub
-New kind of comment: Here we have an implicit null check because we are dereferencing the object array elementData to get the length of it. (Java code: elementData.length). If elementData is null, JVM must throw a NullPointerException in this case. But, too avoid generating code for each object dereferenced, JIT relies on OS signal handling for segfault to handle this rare case. See my article on this technique. 
+``` 
+New kind of comment: Here we have an implicit null check because we are dereferencing the object array elementData to get the length of it. (Java code: `elementData.length`). If `elementData` is null, JVM must throw a `NullPointerException` in this case. But, too avoid generating code for each object dereferenced, JIT relies on OS signal handling for segfault to handle this rare case. See my [article](https://jpbempel.github.io/2013/09/03/null-check-elimination.html) on this technique. 
 
-Type Check
+### Type Check
 Let's skip some regular comments to stop on this one
+```
 0x0000000002d2a7d3: cmp    r10d,0x200022ee    ;   {metadata('java/lang/Object'[])}
-view rawArrayList_add.TypeCehck.asm hosted with ❤ by GitHub
-We are verifying the current instance elementData class (metadata) is an object array ('java/lang/Object'[]). For performing this, we are getting from the instance the class pointer that we compare to the address of the class loaded by the JVM.
+```
+We are verifying the current instance elementData class (metadata) is an object array (`'java/lang/Object'[]`). For performing this, we are getting from the instance the class pointer that we compare to the address of the class loaded by the JVM.
 
-Card marking
+### Card marking
 Sometimes the comments are wrong:
+```
 0x0000000002d2a7df: lea    r10,[r11+r9*4+0x10]
 0x0000000002d2a7e4: mov    r11,QWORD PTR [rsp+0x8]
 0x0000000002d2a7e9: mov    r8,r11
@@ -252,37 +262,39 @@ Sometimes the comments are wrong:
 0x0000000002d2a7fe: mov    BYTE PTR [r11+r10*1],r12b
                                               ;*synchronization entry
                                               ; - java.util.ArrayList::add@-1 (line 458)
-view rawArrayList_add.CardMarking.asm hosted with ❤ by GitHub
-Here this is not a synchronization entry, but a special operation called 'card marking' that is performed after a write of a reference into a field or a reference array (elementData in our case). Card marking generated assembly is analyzed in this article. In this case we have card marking for element in an array, but for regular instance field, the generated assembly is different.
+```
+Here this is not a `synchronization entry`, but a special operation called 'card marking' that is performed after a write of a reference into a field or a reference array (`elementData` in our case). Card marking generated assembly is analyzed in this [article](http://psy-lob-saw.blogspot.fr/2014/10/the-jvm-write-barrier-card-marking.html). In this case we have card marking for element in an array, but for regular instance field, the generated assembly is different.
 
-Safepoint poll
+### Safepoint poll
+``` 
  0x0000000002d2a807: test   DWORD PTR [rip+0xfffffffffe5857f3],eax        # 0x00000000012b0000
                                                 ;   {poll_return}
-view rawArrayList_add.Safepoint.asm hosted with ❤ by GitHub
-Finally, the comment {poll_return}indicates that the instruction performs a safepoint check. You will see this at the end of all methods. For more details about safepoints, please read my article and, a more detailed exploration of safepoints and impact here.
+```
+Finally, the comment `{poll_return}` indicates that the instruction performs a safepoint check. You will see this at the end of all methods. For more details about safepoints, please read my [article](https://jpbempel.github.io/2013/03/04/safety-first-safepoints.html) and, a more detailed exploration of safepoints and impact [here](http://psy-lob-saw.blogspot.fr/2015/12/safepoints.html).
 
-Voilà! You have the basics to understand the disassembly output from PrintAssembly options. I strongly recommend, again, if you want to go further to use the wonderful JITWatch tool.
+Voilà! You have the basics to understand the disassembly output from PrintAssembly options. I strongly recommend, again, if you want to go further to use the wonderful [JITWatch tool](https://github.com/AdoptOpenJDK/jitwatch).
 
 
-References
+## References
 From this blog:
-Safety first: Safepoints
-How to print disassembly from JIT code
-Null check elimination
-Volatile and memory barriers
+* [Safety first: Safepoints](https://jpbempel.github.io/2013/03/04/safety-first-safepoints.html)
+* [How to print disassembly from JIT code](https://jpbempel.github.io/2012/10/16/how-to-print-disassembly-from-JIT-code.html)
+* [Null check elimination](https://jpbempel.github.io/2013/09/03/null-check-elimination.html)
+* [Volatile and memory barriers](https://jpbempel.github.io/2015/05/26/volatile-and-memory-barriers.html)
+
 From Nitsan's blog (read all articles but specifically):
+* [Where is my safepoint?](http://psy-lob-saw.blogspot.fr/2014/03/where-is-my-safepoint.html)
+* [Safepoints: Meaning, Side Effects and Overheads](http://psy-lob-saw.blogspot.fr/2015/12/safepoints.html)
+* [The JVM Write Barrier: Card Marking](http://psy-lob-saw.blogspot.fr/2014/10/the-jvm-write-barrier-card-marking.html)
+* [Experimentation Notes: Java Print Assembly](http://psy-lob-saw.blogspot.fr/2013/01/java-print-assembly.html)
+* [Disassembling a JMH Nano-Benchmark](http://psy-lob-saw.blogspot.fr/2014/08/disassembling-jmh-nano-benchmark.html)
+* [JMH perfasm explained: Looking at False Sharing on Conditional Inlining](http://psy-lob-saw.blogspot.fr/2015/07/jmh-perfasm.html)
 
-Where is my safepoint?
-Safepoints: Meaning, Side Effects and Overheads
-The JVM Write Barrier: Card Marking
-Experimentation Notes: Java Print Assembly
-Disassembling a JMH Nano-Benchmark
-JMH perfasm explained: Looking at False Sharing on Conditional Inlining
 Other sources:
-JITWatch from Chris Newland
-The Black Magic of (Java) Method Dispatch from Aleksey Shipilëv
-PrintAssembly from OpenJDK wiki
-x86 guide
-Stacks with split personalities from Doug Simon (includes stack banging)
+* [JITWatch](https://github.com/AdoptOpenJDK/jitwatch) from [Chris Newland](https://twitter.com/chriswhocodes)
+* [The Black Magic of (Java) Method Dispatch](http://shipilev.net/blog/2015/black-magic-method-dispatch/) from [Aleksey Shipilëv](https://twitter.com/shipilev)
+* [PrintAssembly](https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly) from OpenJDK wiki
+* [x86 guide](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
+* [Stacks with split personalities](https://blogs.oracle.com/dns/entry/stacks_with_split_personalities) from Doug Simon (includes stack banging)
 
-Thanks to Georges Gomes for the review, and a special BIG thanks to The Great Nitsan Wakart who  provides me tons of comments and corrections!
+*Thanks to [Georges Gomes](https://twitter.com/georges_gomes) for the review, and a special BIG thanks to [The Great Nitsan Wakart](https://twitter.com/nitsanw) who provides me tons of comments and corrections!*
