@@ -5,30 +5,31 @@ layout: default
 # Notify... oh, wait! I have a signal.
 ## Introduction
 
-When you want to pipeline, delegate some task asynchronously or simply synchronize 2 threads, you usually end up using wait/notify couple (or even await/signal, depending on your taste).
+When you want to pipeline, delegate some task asynchronously or simply synchronize 2 threads, you usually end up using `wait`/`notify` couple (or even `await`/`signal`, depending on your taste).
 
-But what is the cost or the overhead for this kind of pattern ?
+But what is the cost or the overhead for this kind of pattern?
 
-Under the hood
-What happening when we are using wait/notify couple ?
-I simplify here to this couple, as the other (await/signal) calls the same set of underlying methods:
-
-
-Linux	Windows
-Object.notify	pthread_cond_signal	SetEvent
-Object.wait	pthread_cond_timedwait	WaitForSingleObject
-
-Basically we are performing system calls. For Object.wait we ask the OS scheduler to move the current thread to the wait queue
+## Under the hood
+What happening when we are using `wait`/`notify` couple?
+I simplify here to this couple, as the other (`await`/`signal`) calls the same set of underlying methods:
 
 
+| |Linux|Windows|
+|---|---|---|
+|`Object.notify`|`pthread_cond_signal`|`SetEvent`|
+|`Object.wait`|`pthread_cond_timedwait`|`WaitForSingleObject`|
 
-For Object.notify, we ask the scheduler (via futexes[1] on Linux) to move one of the waiting threads from the wait queue to the run queue to be scheduled when possible.
+Basically we are performing system calls. For `Object.wait` we ask the OS scheduler to move the current thread to the wait queue
 
-Just a quick remark about system calls: contrary to the common belief, system calls do not imply context switches[2]. It depends on the kernel implementation. On Linux there is no context switch unless the system call implementation requires it like for IO. In the case of pthread_cond_signal, there is no context switches involved.
+![](/assets/2015/07/Wait-notify.png)
+
+For `Object.notify`, we ask the scheduler (via [futexes](http://www.akkadia.org/drepper/futex.pdf) on Linux) to move one of the waiting threads from the wait queue to the run queue to be scheduled when possible.
+
+Just a quick remark about system calls: contrary to the common belief, system calls do not imply [context switches](http://en.wikipedia.org/wiki/System_call#Processor_mode_and_context_switching). It depends on the kernel implementation. On Linux there is no context switch unless the system call implementation requires it like for IO. In the case of `pthread_cond_signal`, there is no context switches involved.
 
 Knowing that, what is the cost of calling notify for a producer thread ?
 
-Measure, don't guess!
+## Measure, don't guess!
 Why not building a micro-benchmark ? Because I do not care about average latency, I care about outliers, spikes. How it behaves for 50, 90, 95, 99, 99.9 % of the time.  What may be the maximum I can observe?
 Let's measure it with HdrHistorgram from Gil Tene and the following code:
 
