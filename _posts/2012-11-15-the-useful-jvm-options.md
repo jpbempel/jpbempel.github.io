@@ -1,6 +1,7 @@
 ---
 title:  "The useful JVM options"
 layout: default
+date: 2012-11-15
 ---
 # The useful JVM options
 *This post relates to JDK6 at the time of writing* 
