@@ -1,6 +1,7 @@
 ---
-title: "Hardware Performance Counters: atomic vs standard incrementation"
+title: "Hardware performance counters: atomic vs standard incrementation"
 layout: default
+date: 2013-10-30
 ---
 
 # Hardware Performance Counters: atomic vs standard incrementation
