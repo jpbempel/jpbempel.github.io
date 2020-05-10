@@ -1,6 +1,7 @@
 ---
 title: "Hardware performance counters"
 layout: default
+date: 2013-08-02
 ---
 
 # Hardware performance counters
