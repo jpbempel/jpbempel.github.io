@@ -1,6 +1,7 @@
 ---
 title: "Null check elimination"
 layout: default
+date: 2013-09-03
 ---
 # Null check elimination
 Among of all kinds of optimization performed by the JIT, one is the most cited as example: null check elimination. Maybe because dealing with null is such a common task in Java.
