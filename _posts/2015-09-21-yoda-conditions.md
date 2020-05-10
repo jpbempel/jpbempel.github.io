@@ -1,6 +1,7 @@
 ---
 title: "Yoda conditions"
 layout: default
+date: 2015-09-21
 ---
 # Yoda conditions
 This blog post is not about performance, but ranting. Ranting about too many developers that apply blindly some "rules" without knowing why there are those practices in the first place.
