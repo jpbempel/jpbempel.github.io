@@ -1,6 +1,7 @@
 ---
 title: "Measuring contention on locks"
 layout: default
+date: 2014-05-23
 ---
 # Measuring contention on locks
 
