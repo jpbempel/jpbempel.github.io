@@ -1,6 +1,7 @@
 ---
 title: "Ordered scheduler"
 layout: default
+date: 2015-08-28
 ---
 # Ordered scheduler
 ## Background
