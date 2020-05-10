@@ -1,6 +1,7 @@
 ---
 title: "Branches: I have lost my path!"
 layout: default
+date: 2014-05-09
 ---
 # Branches: I have lost my path!
 
