@@ -1,6 +1,7 @@
 ---
 title: "Volatile and memory barriers"
 layout: default
+date: 2015-05-26
 ---
 # Volatile and memory barriers
 
