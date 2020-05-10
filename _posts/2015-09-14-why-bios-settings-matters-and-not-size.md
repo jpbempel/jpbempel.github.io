@@ -1,6 +1,7 @@
 ---
 title: "Why BIOS settings matters (and not size)!"
 layout: default
+date: 2015-09-14
 ---
 # Why BIOS settings matters (and not size)!
 Recently, we have received new server machines based on Xeon E5v3 (Haswell). I have heard from different people that this CPU generation is very good, and figures are really impressive.
