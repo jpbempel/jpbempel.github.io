@@ -1,6 +1,7 @@
 ---
 title:  "How to print disassembly from JIT Code?"
 layout: default
+date: 2012-10-16
 ---
 In my previous post, I have shown you some disassembly from JIT native code. How to do the same at home?
 
