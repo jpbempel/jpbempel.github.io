@@ -1,5 +1,7 @@
 ---
 title: "Whitebox API"
+layout: default
+date: 2015-07-07
 ---
 # WhiteBox API
 
