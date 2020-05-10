@@ -28,9 +28,10 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <p>date: {{ page.date }}</p>
+    <div id="main_content_wrap" class="outer">             
       <section id="main_content" class="inner">
+{%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
+        <p>date: {{ page.date }}</p>
         {{ content }}
       </section>
     </div>
