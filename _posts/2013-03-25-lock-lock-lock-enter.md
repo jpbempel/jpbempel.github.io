@@ -1,3 +1,8 @@
+---
+title: "Lock Lock Lock: Enter!"
+layout: default
+date: 2013-03-25
+---
 # Lock Lock Lock: Enter!
 
 ## Java locks
