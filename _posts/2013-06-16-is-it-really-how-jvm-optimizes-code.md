@@ -1,6 +1,7 @@
 ---
 title:  "Is it really how JVM optimizes the code?"
 layout: default
+date: 2013-06-16
 ---
 # Is it really how JVM optimizes the code?
 This post is shorter than the previous ones. It is just to give you another example of the usage of my lovely JVM option PrintAssembly.
