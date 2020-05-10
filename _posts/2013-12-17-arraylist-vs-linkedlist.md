@@ -1,6 +1,7 @@
 ---
 title: "ArrayList vs LinkedList"
 layout: default
+date: 2013-12-17
 ---
 # ArrayList vs LinkedList
 
