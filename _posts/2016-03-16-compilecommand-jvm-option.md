@@ -1,6 +1,7 @@
 ---
 title: "CompileCommand JVM option"
 layout: default
+date: 2016-03-16
 ---
 # CompileCommand JVM option
 CompileCommand is another JVM option that you can play with in conjunction (or not) with the famous [PrintAssembly](https://jpbempel.github.io/2012/10/16/how-to-print-disassembly-from-JIT-code.html). But there is more...
