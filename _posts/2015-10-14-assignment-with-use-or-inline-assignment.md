@@ -1,6 +1,7 @@
 ---
 title: "assignment-with-use or inline assignment"
 layout: default
+date: 2015-10-14
 ---
 # assignment-with-use or inline assignment
 I am still astonished by some persistent folklore and "rules of thumb" that find their origin in a so ancient time that most of people forget why they follow this rule.
