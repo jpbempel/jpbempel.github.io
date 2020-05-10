@@ -1,6 +1,7 @@
 ---
 title: "Notify... oh, wait! I have a signal."
 layout: default
+date: 2015-07-13
 ---
 # Notify... oh, wait! I have a signal.
 ## Introduction
