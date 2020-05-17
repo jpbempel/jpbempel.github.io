@@ -23,8 +23,11 @@ But what you need to keep in mind regarding this, the process is dynamic (levels
 
 Also note JIT use some threads in background to perform the compilation. The option [`CICompilerCount`](https://chriswhocodes.com/hotspot_options_jdk8.html?search=CICompilerCount) allow to specifiy this number, but by default in TieredCompilation mode there is 2 threads (1 per JIT Compiler):
 
-
-
+```
+$ java -XX:+PrintFlagsFinal -version | grep CICompilerCount
+     intx CICompilerCount                          := 2                                   {product}
+     bool CICompilerCountPerCPU                     = true                                {product}
+```
 
 ## Measuring startup time
 
@@ -53,6 +56,7 @@ docker run --cpus=<n> -ti spring-petclinic
 ```
 
 |Cpus|JVM startup time (s)|
+|---|---|---|
 |4|12.918|
 |2|14.444|
 |1|35.795|
