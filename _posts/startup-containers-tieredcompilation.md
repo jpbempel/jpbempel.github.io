@@ -21,22 +21,46 @@ But things chan change like:
 
 But what you need to keep in mind regarding this, the process is dynamic (levels are also adjusted on the fly).
 
+Also note JIT use some threads in background to perform the compilation. The option [`CICompilerCount`](https://chriswhocodes.com/hotspot_options_jdk8.html?search=CICompilerCount) allow to specifiy this number, but by default in TieredCompilation mode there is 2 threads (1 per JIT Compiler):
+
+
+
+
 ## Measuring startup time
 
 Most of the compilations happen at startup time, let's take a classic application like [Spring PetClinic](https://github.com/spring-projects/spring-petclinic).
+Here the `Dockerfile`:
 ```
-FROM adoptopenjdk:8-latest
+FROM azul/zulu-openjdk:8
+RUN apt-get update && apt-get install -y git
+RUN git clone https://github.com/spring-projects/spring-petclinic.git
+RUN cd spring-petclinic && ./mvnw package
+CMD ["java", "-jar", "/spring-petclinic/target/spring-petclinic-2.3.0.BUILD-SNAPSHOT.jar"]
+```
+Build the image `spring-petclinic`:
+```
+$ docker build --tag spring-petclinic .
 ```
 
-The application at the end of the starup displays
+Let's run it with 4 cores of my intel i7-8569U. The application at the end of the starup displays
+```
+Started PetClinicApplication in 12.059 seconds (JVM running for 12.918)
 ```
 
+Now let's run it with different cpus from docker:
+```
+docker run --cpus=<n> -ti spring-petclinic
 ```
 
-let's run it with less than a core:
-```
-docker run -ti --cpus=0.8 spring-petclinic
-```
+|Cpus|JVM startup time (s)|
+|4|12.918|
+|2|14.444|
+|1|35.795|
+|0.8|50.151|
+|0.4|118.462|
+|0.2|297.698|
+
+
 
 
 ## References
@@ -47,6 +71,7 @@ TieredCompilation in depth:
 - https://www.slideshare.net/maddocig/tiered
 - https://slideplayer.com/slide/12376325/
 
+https://docs.oracle.com/javase/8/docs/technotes/tools/windows/java.html
 
 JIT Threads 
 ==========================
