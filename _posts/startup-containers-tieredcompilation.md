@@ -55,14 +55,14 @@ Now let's run it with different cpus from docker:
 docker run --cpus=<n> -ti spring-petclinic
 ```
 
-|Cpus|JVM startup time (s)|
-|---|---|---|
-|4|12.918|
-|2|14.444|
-|1|35.795|
-|0.8|50.151|
-|0.4|118.462|
-|0.2|297.698|
+| Cpus | JVM startup time (s) |
+| --- | --- | --- |
+| 4 | 12.918 |
+| 2 | 14.444 |
+| 1 | 35.795 |
+| 0.8 | 50.151 |
+| 0.4 | 118.462 |
+| 0.2 | 297.698 |
 
 
 
