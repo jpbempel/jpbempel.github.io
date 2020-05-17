@@ -56,7 +56,7 @@ docker run --cpus=<n> -ti spring-petclinic
 ```
 
 | Cpus | JVM startup time (s) |
-| --- | --- | --- |
+| --- | --- |
 | 4 | 12.918 |
 | 2 | 14.444 |
 | 1 | 35.795 |
@@ -64,7 +64,23 @@ docker run --cpus=<n> -ti spring-petclinic
 | 0.4 | 118.462 |
 | 0.2 | 297.698 |
 
+From 1 cpu, starup time begins to suffer dramatically.
 
+Adding this will help us quantify the JIT time spent for our startup:
+```
+System.out.println("Total Compilation time: " + ManagementFactory.getCompilationMXBean().getTotalCompilationTime() + "ms");
+```
+
+Results with 4 cpus and therefore with C1 + C2:
+```
+Total Compilation time: 17718ms
+```
+
+Let's measure with only C1 by using `-XX:
+
+```
+Total Compilation time: 1261ms
+```
 
 
 ## References
