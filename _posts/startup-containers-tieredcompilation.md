@@ -11,8 +11,19 @@ Since JDK 8, Tiered Compilation was introduced and made by default. It means tha
 
 Nowadays, with Tiered Compilation we can benefit from both JITs a the same time. So first, JVM JIT compiles with C1 to reach quickly native code, but with profiling and at some point C2 kicks-in and it recompiles for more aggressive and time consuming optimizations. 
 
+Here a description of the different levels of compilation:
 ![](/assets/2020/05/TieredCompilation_1.png)
 
+The nominal path for most of the methods are level 0 (Interpretation), level 3 (C1 + Full Profiling) and level 4 (C2)
+But things chan change like:
+- If too many methods are queued for level 4 compilation, some are sent to level 2.
+- If methods are trivial (small, nothing to profile) they are directly compiled at level 1 and stop here.
+But what you need to keep in mind regarding this, the process is dynamic (levels are also adjusted on the fly).
+
+
+
+
+## References
 Article recommending TierdStopAtLevel=1
 https://phauer.com/2017/increase-jvm-development-productivity/
 
