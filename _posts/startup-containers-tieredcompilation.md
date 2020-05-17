@@ -76,7 +76,7 @@ Results with 4 cpus and therefore with C1 + C2:
 Total Compilation time: 17718ms
 ```
 
-Let's measure with only C1 by using `-XX:
+Let's measure with only C1 by using `-XX:TieredStopAtLevel=1`
 
 ```
 Total Compilation time: 1261ms
