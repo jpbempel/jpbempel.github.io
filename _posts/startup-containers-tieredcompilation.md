@@ -82,6 +82,15 @@ Let's measure with only C1 by using `-XX:TieredStopAtLevel=1`
 Total Compilation time: 1261ms
 ```
 
+More than 10x difference! But why such difference? How this compilation time is ditributed? 
+I have used Azul Zulu 8 distribution for one reason: it includes JDK Flight Recorder (JFR), so we can record compilation events to have more information about the JIT.
+Each JDK distribution including JFR, provides by default 2 settings: default & profiling. Those settings can be found in 
+`<base_dir>/lib/jfr` directory.
+I have duplicated the default.jfc file and edited as follow:
+
+
+
+I have used Azul Zulu 8 distribution for one reason: it includes JDK Flight Recorder (JFR), so we can record compilation events to have more information about the JIT.
 
 ## References
 Article recommending TierdStopAtLevel=1
