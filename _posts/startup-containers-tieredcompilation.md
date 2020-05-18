@@ -82,12 +82,39 @@ Let's measure with only C1 by using `-XX:TieredStopAtLevel=1`
 Total Compilation time: 1261ms
 ```
 
-More than 10x difference! But why such difference? How this compilation time is ditributed? 
+More than 10x difference! But why such difference? How this compilation time is ditributed?
+
+## Measuring JIT Compilation time
 I have used Azul Zulu 8 distribution for one reason: it includes JDK Flight Recorder (JFR), so we can record compilation events to have more information about the JIT.
 Each JDK distribution including JFR, provides by default 2 settings: default & profiling. Those settings can be found in 
 `<base_dir>/lib/jfr` directory.
 I have duplicated the default.jfc file and edited as follow:
 
+```
+    <event name="jdk.Compilation">
+      <setting name="enabled" control="compiler-enabled">true</setting>
+      <setting name="threshold" control="compiler-compilation-threshold">0 ms</setting>
+    </event>
+```
+
+I have reduced the threshold to `0 ms` instead of `1000 ms` to report information about all compiled methods.
+Then, I have launched the application as follow:
+```
+java -XX:StartFlightRecording=dumponexit=true,filename=C1C2.jfr,settings=compile -XX:TieredStopAtLevel=4 -jar target/spring-petclinic-2.3.0.BUILD-SNAPSHOT.jar
+```
+to record Tiered Compilation C1+C2, and:
+```
+java -XX:StartFlightRecording=dumponexit=true,filename=C1.jfr,settings=compile -XX:TieredStopAtLevel=1 -jar target/spring-petclinic-2.3.0.BUILD-SNAPSHOT.jar
+```
+to record C1 only.
+
+I have opened both files into JDK Mission Control:
+![](/assets/2020/05/JMC_1.png)
+You can have a look of the compilation information into `Event Browser` tree entry on the left, and then choose `Compilation` in Event types Tree in the middle. You can then export the list of events by selecting all the lines (CTRL+A) and right click on the selection to select `Clipboard settings` -> `Copy as CSV` and then `Copy`.You can now paste this into a new file.
+
+![](/assets/2020/05/JMC_2.png)
+
+ 
 
 
 I have used Azul Zulu 8 distribution for one reason: it includes JDK Flight Recorder (JFR), so we can record compilation events to have more information about the JIT.
