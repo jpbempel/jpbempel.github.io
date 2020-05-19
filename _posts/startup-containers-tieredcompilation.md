@@ -114,10 +114,21 @@ You can have a look of the compilation information into `Event Browser` tree ent
 
 ![](/assets/2020/05/JMC_2.png)
 
- 
+Here some stats:
 
+|     | C1+C2 | C1 only |
+| --- | ---   | ---     |
+| # compiled methods | 6,117 | 5,084 |
+| # C1 compiled methods | 5,254 | 5,084 |
+| # C2 compiled methods | 863 | 0 |
+| Total Time (ms) | 21,678 | 1,234 |
+| Total Time in C1 (ms) | 2,071 | 1,234 |
+| Total Time in C2 (ms) | 19,607 | 0 |
+| # methods comp. time > 1ms | 950 | 154 | 
+| # methods comp. time > 10ms | 201 | 5 | 
+| # methods comp. time > 100ms | 54 | 0 |
+| Max compilation time (ms) | 738 | 29 |
 
-I have used Azul Zulu 8 distribution for one reason: it includes JDK Flight Recorder (JFR), so we can record compilation events to have more information about the JIT.
 
 ## References
 Article recommending TierdStopAtLevel=1
