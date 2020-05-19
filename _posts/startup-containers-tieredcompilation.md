@@ -129,6 +129,21 @@ Here some stats:
 | # methods comp. time > 100ms | 54 | 0 |
 | Max compilation time (ms) | 738 | 29 |
 
+What we can see is C2 taking a very long time to compile a method. We can sum up those statistics with this:
+863 methods compiled with C2 took 19s in total to compile while 5,000+ methods compiled with C1 took 1.2s
+
+The time consumed by C2 threads is part of the quota of CPU allocated for your container. C2 in total consumes more CPU than the time to startup (App startup time 12s, C2 time 19s).
+
+Let's run our PetClinic application ith only C1:
+
+| Cpus | JVM startup time (s) | % diff |
+| --- | --- | --- |
+| 4 | 14.465 | +12%|
+| 2 | 14.097 | -2% |
+| 1 | 21.208 | -40% |
+| 0.8 | 29.3 | -41% |
+| 0.4 | 71.45 | -40% |
+| 0.2 | 176.105 | -40% |
 
 ## References
 Article recommending TierdStopAtLevel=1
