@@ -160,10 +160,9 @@ https://www.kernel.org/doc/html/latest/scheduler/sched-bwc.html
 * Article recommending TierdStopAtLevel=1
 https://phauer.com/2017/increase-jvm-development-productivity/
 
-TieredCompilation in depth: 
-- https://www.slideshare.net/maddocig/tiered
-- https://slideplayer.com/slide/12376325/
+* TieredCompilation in depth: 
+ ** https://www.slideshare.net/maddocig/tiered
+** https://slideplayer.com/slide/12376325/
 
-Chris Newland's VM Options Explorer
-
+* Chris Newland's VM Options Explorer
 https://chriswhocodes.com/hotspot_options_jdk8.html
