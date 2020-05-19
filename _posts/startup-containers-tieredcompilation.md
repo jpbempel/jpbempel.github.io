@@ -145,6 +145,9 @@ Let's run our PetClinic application ith only C1:
 | 0.4 | 71.45 | -40% |
 | 0.2 | 176.105 | -40% |
 
+## Conclusion
+
+
 ## References
 Article recommending TierdStopAtLevel=1
 https://phauer.com/2017/increase-jvm-development-productivity/
