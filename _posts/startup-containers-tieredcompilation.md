@@ -151,16 +151,13 @@ By default, Tiered Compilation provides background compilation using 2 threads, 
 Using containers with CPU quota restriction with only 1 core or less will clearly impact your startup and if this phase is cricital for you (time to respond at health checks for example), you should consider using `-XX:TieredStopAtLevel=1`. Regarding peak performance, *in my opinion*, if you have already given less than 1 core to your application instance, I don't think the level of C2 optimizations will bring a big difference. Up to you to measure with your specific worload if the latency/throughput is affected by using only C1.
 
 ## References
-Resource units in Kubernetes - millicores
-
+* Resource units in Kubernetes - millicores
 https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes
 
-CFS bandwidth
-
+* CFS bandwidth
 https://www.kernel.org/doc/html/latest/scheduler/sched-bwc.html
 
-Article recommending TierdStopAtLevel=1
-
+* Article recommending TierdStopAtLevel=1
 https://phauer.com/2017/increase-jvm-development-productivity/
 
 TieredCompilation in depth: 
