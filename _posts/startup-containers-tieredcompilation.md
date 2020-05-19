@@ -21,7 +21,7 @@ But things chan change like:
 
 But what you need to keep in mind regarding this, the process is dynamic (levels are also adjusted on the fly).
 
-Also note JIT use some threads in background to perform the compilation. The option [`CICompilerCount`](https://chriswhocodes.com/hotspot_options_jdk8.html?search=CICompilerCount) allow to specifiy this number, but by default in TieredCompilation mode there is 2 threads (1 per JIT Compiler):
+Also note JIT use some threads in background to perform the compilation. The option [`CICompilerCount`](https://chriswhocodes.com/hotspot_options_jdk8.html?search=CICompilerCount) allow to specifiy this number, but by default in Tiered Compilation mode there is 2 threads (1 per JIT Compiler):
 
 ```
 $ java -XX:+PrintFlagsFinal -version | grep CICompilerCount
@@ -146,7 +146,9 @@ Let's run our PetClinic application ith only C1:
 | 0.2 | 176.105 | -40% |
 
 ## Conclusion
+By default, Tiered Compilation provides background compilation using 2 threads, 1 for C1 and the other for C2. But as we were able to measure, compilation time for C2, is at least 10 times longer than C1. This has real implication on CPU time consumed, especially at startup time.
 
+Using container with CPU quota restriction with only 1 core or less will clearly impact your startup and if this phase is cricital for you (time to respond at health checks for example), you should consider using `-XX:TieredStopAtLevel=1`. Regarding peak performance, *in my opinion*, if you have already given less than 1 core to your application instance, I don't think the level of C2 optimizations will bring a big difference. Up to you to measure with your specific worload if the latency/throughput is affected by only using C1.
 
 ## References
 Article recommending TierdStopAtLevel=1
@@ -156,16 +158,5 @@ TieredCompilation in depth:
 - https://www.slideshare.net/maddocig/tiered
 - https://slideplayer.com/slide/12376325/
 
-https://docs.oracle.com/javase/8/docs/technotes/tools/windows/java.html
-
-JIT Threads 
-==========================
-
-If you happen to start an app in a constrained container ( <1 core)
-JIT threads needs room to work well
-
-take sprint petclinic app, and start with docker restraint core
-C1 => 1.2s cputime
-C2 => 20s cpu time
-Measure more precisely with JFR Compile events
-
+Chris Newland's Options Explorer
+https://chriswhocodes.com/hotspot_options_jdk8.html
