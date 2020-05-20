@@ -32,17 +32,17 @@
       <section id="main_content" class="inner">
         {%- assign date_format = site.minima.date_format | default: "%0d %b %Y" -%}
         <p>{{ page.date | date: date_format }}</p>
-        <p>{{ page.date }}</p>
-        <p>{{ page.title }}</p>
           {% if page.name != "index.md" %}
-            <span class="reading-time" title="Estimated read time">
-            {% assign words = content | number_of_words %}
-            {% if words < 360 %}
-              1 min
-            {% else %}
-              {{ words | divided_by:180 }} mins
+            {% if page.name != "about.md" %}
+              <span class="reading-time" title="Estimated read time">
+              {% assign words = content | number_of_words %}
+              {% if words < 360 %}
+                1 min
+              {% else %}
+                {{ words | divided_by:180 }} mins
+              {% endif %}
+              </span>
             {% endif %}
-            </span>
           {% endif %}
         {{ content }}
       </section>
