@@ -114,7 +114,7 @@ You can have a look of the compilation information into `Event Browser` tree ent
 
 ![](/assets/2020/05/JMC_2.png)
 
-Here some stats:
+Here some statistics:
 
 |     | C1+C2 | C1 only |
 | --- | ---   | ---     |
