@@ -162,3 +162,5 @@ Using containers with CPU quota restriction with only 1 core or less will clearl
   - https://slideplayer.com/slide/12376325/
 
 - [Chris Newland's VM Options Explorer](https://chriswhocodes.com/hotspot_options_jdk8.html)
+
+*Thanks to [Marcus Hirt](https://twitter.com/hirt) for the review*
