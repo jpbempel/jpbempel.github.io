@@ -4,24 +4,24 @@ layout: default
 ---
 # Startup, containers & Tiered Compilation
 ## Introduction
-Since the introduction of containers, the way we are running JVM applications has changed a lot. In the same time, microservices architecture rises and the usage of container orchestration like Mesos or Kubernetes has transformed our approach of deployment. With all of that, I end up encounter people setuping a container with less than 1 core. Yes, with docker, for example, we can specify than the container will run with a fraction of a core (called [millicores in Kubernetes](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes)). Kernel is dealing with that using cpu scheduling quota (see [CFS bandwidth](https://www.kernel.org/doc/html/latest/scheduler/sched-bwc.html)). If it could make sense to put 1.5 or 2.5 on an already multi-core machine, having those scheduling quota in mind, putting less than a core has different implications...
+Since the introduction of containers, the way we are running JVM applications has changed a lot. In the same time, microservices architecture rises and the usage of container orchestration like Mesos or Kubernetes has transformed our approach of deployment. With all of that, I end up encountering people configuring a container with less than 1 core. Yes, with docker, for example, we can specify that the container will run with a fraction of a core (called [millicores in Kubernetes](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes)). The kernel is dealing with that using cpu scheduling quota (see [CFS bandwidth](https://www.kernel.org/doc/html/latest/scheduler/sched-bwc.html)). If it could make sense to put 1.5 or 2.5 on an already multi-core machine, putting less than a core has different implications...
 
 ## Tiered Compilation
-Since JDK 8, Tiered Compilation was introduced and made by default. It means that the 2 JIT compilers (C1 & C2 are used in combination). Before that, There was those 2 JITs but you had to choose between the 2. C1 was made for client application, with desktop machine (at that time), with only one core. C1 is focused on startup time and reaching native performance quickly. C2 was made for server application, with at least 2 cores (server-class machine), focused on reaching peak performance but with less time constraint.
+Since JDK 8, Tiered Compilation was introduced and made by default. It means that the 2 JIT compilers (C1 & C2 are used in combination). Before that, there were those 2 JITs, but you had to choose between the 2. C1 was made for client applications, with the assumption that desktop machines (at that time) had one core. C1 is focusing on startup time and reaching native performance quickly. C2 was made for server applications, with at least 2 cores (server-class machine), focused on reaching peak performance but with less time constraints.
 
-Nowadays, with Tiered Compilation we can benefit from both JITs a the same time. So first, JVM JIT compiles with C1 to reach quickly native code, but with profiling and at some point, C2 kicks-in and it recompiles for more aggressive and time consuming optimizations. 
+Nowadays, with Tiered Compilation we can benefit from both JITs at the same time. So first, the JVM JIT compiles with C1 to quickly reach native code, but with profiling and at some point, C2 kicks-in and it recompiles for more aggressive and time consuming optimizations. 
 
-Here a description of the different levels of compilation:
+Here is a description of the different levels of compilation:
 ![](/assets/2020/05/TieredCompilation_1.png)
 
 The nominal path for most of the methods are level 0 (Interpretation), level 3 (C1 + Full Profiling) and level 4 (C2)
-But things chan change like:
+But things can change like:
 - If too many methods are queued for level 4 compilation, some are sent to level 2.
 - If methods are trivial (small, nothing to profile) they are directly compiled at level 1 and stop here.
 
-But what you need to keep in mind is the process is dynamic (thresholds are also adjusted on the fly).
+But what you need to keep in mind is that the process is dynamic (thresholds are also adjusted on the fly).
 
-Also note that JIT uses some threads in background to perform the compilation. The option [`CICompilerCount`](https://chriswhocodes.com/hotspot_options_jdk8.html?search=CICompilerCount) allow to specifiy this number, but by default in Tiered Compilation mode there is 2 threads (1 per JIT Compiler):
+Also note that the JIT uses some threads in the background to perform the compilation. The option [`CICompilerCount`](https://chriswhocodes.com/hotspot_options_jdk8.html?search=CICompilerCount) allow you to specify this number, but by default in Tiered Compilation mode there is 2 threads (1 per JIT Compiler):
 
 ```
 $ java -XX:+PrintFlagsFinal -version | grep CICompilerCount
@@ -45,7 +45,7 @@ Build the image `spring-petclinic`:
 $ docker build --tag spring-petclinic .
 ```
 
-Let's run it with 4 cores of my intel i7-8569U. The application at the end of the starup displays:
+Let's run it with 4 cores of my intel i7-8569U. The application at the end of the startup displays:
 ```
 Started PetClinicApplication in 12.059 seconds (JVM running for 12.918)
 ```
@@ -64,7 +64,7 @@ docker run --cpus=<n> -ti spring-petclinic
 | 0.4 | 118.462 |
 | 0.2 | 297.698 |
 
-From 1 cpu, starup time begins to suffer dramatically.
+From 1 cpu, startup time begins to suffer dramatically.
 
 Adding this in the `main` method will help us quantify the JIT time spent for our startup:
 ```
@@ -82,10 +82,10 @@ Let's measure with only C1 by using `-XX:TieredStopAtLevel=1`
 Total Compilation time: 1261ms
 ```
 
-More than 10x difference! But why such difference? How this compilation time is distributed?
+More than 10x difference! But why such a difference? How is this compilation time distributed?
 
 ## Measuring JIT Compilation time
-I have used Azul Zulu 8 distribution for one reason: it includes JDK Flight Recorder (JFR), so we can record compilation events to have more information about the JIT.
+I have used the Azul Zulu 8 distribution for one reason: it includes JDK Flight Recorder (JFR), so we can record compilation events to have more information about the JIT.
 Each JDK distribution including JFR, provides by default 2 settings: `default` & `profiling`. Those settings can be found in 
 `<base_dir>/lib/jfr` directory.
 I have duplicated the default.jfc file and edited as follow:
@@ -110,7 +110,7 @@ to record C1 only.
 
 I have opened both files into JDK Mission Control:
 ![](/assets/2020/05/JMC_1.png)
-You can have a look of the compilation information into `Event Browser` tree entry on the left, and then choose `Compilation` in Event types Tree in the middle. You can then export the list of events by selecting all the lines (CTRL+A) and right click on the selection to select `Clipboard settings` -> `Copy as CSV` and then `Copy`. You can now paste this into a new file.
+You can have a look at the compilation information in the `Event Browser` tree entry on the left, and then choose `Compilation` in Event types Tree in the middle. You can then export the list of events by selecting all the lines (CTRL+A) and right click on the selection to select `Clipboard settings` -> `Copy as CSV` and then `Copy`. You can now paste this into a new file.
 
 ![](/assets/2020/05/JMC_2.png)
 
@@ -134,7 +134,7 @@ What we can see is C2 taking a very long time to compile a method. We can sum up
 
 The time consumed by C2 threads is part of the quota of CPU allocated for your container. C2 in total consumes more CPU than the time to startup (App startup time 12s, C2 time 19s).
 
-Let's run our PetClinic application ith only C1:
+Let's run our PetClinic application with only C1:
 
 | Cpus | JVM startup time (s) | % diff |
 | --- | --- | --- |
@@ -146,16 +146,16 @@ Let's run our PetClinic application ith only C1:
 | 0.2 | 176.105 | -40% |
 
 ## Conclusion
-By default, Tiered Compilation provides background compilation using 2 threads, 1 for C1 and the other for C2. But as we were able to measure, compilation time for C2, is at least 10 times longer than C1. This has real implication on CPU time consumed, especially at startup time.
+By default, Tiered Compilation provides background compilation using 2 threads, 1 for C1 and the other for C2. But as we were able to measure, compilation time for C2, is at least 10 times longer than C1. This has real implications on CPU time consumed, especially at startup time.
 
-Using containers with CPU quota restriction with only 1 core or less will clearly impact your startup and if this phase is cricital for you (time to respond at health checks for example), you should consider using `-XX:TieredStopAtLevel=1`. Regarding peak performance, *in my opinion*, if you have already given less than 1 core to your application instance, I don't think the level of C2 optimizations will bring a big difference. Up to you to measure with your specific worload if the latency/throughput is affected by using only C1.
+Using containers with CPU quota restriction with only 1 core or less will clearly impact your startup and if this phase is critical for you (time to respond at health checks for example), you should consider using `-XX:TieredStopAtLevel=1`. Regarding peak performance, *in my opinion*, if you have already given less than 1 core to your application instance, I don't think the level of C2 optimizations will bring a big difference. Up to you to measure with your specific workload if the latency/throughput is affected by using only C1.
 
 ## References
 - [Resource units in Kubernetes - millicores](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes)
 
 - [CFS bandwidth](https://www.kernel.org/doc/html/latest/scheduler/sched-bwc.html)
 
-- [Article recommending TierdStopAtLevel=1](https://phauer.com/2017/increase-jvm-development-productivity/)
+- [Article recommending TieredStopAtLevel=1](https://phauer.com/2017/increase-jvm-development-productivity/)
 
 - TieredCompilation in depth: 
   - https://www.slideshare.net/maddocig/tiered
