@@ -1,9 +1,9 @@
 ## Jean-Philippe Bempel's Blog
 
-<ul>
+<table>
   {% for post in site.posts %}
-    <li>
-      {{ post.date | date_to_string }} <a href="{{ post.url }}">{{ post.title }}</a>
-    </li>
+    <tr>
+      <td>{{ post.date | date_to_string }}</td><td><a href="{{ post.url }}">{{ post.title }}</a></td>
+    </tr>
   {% endfor %}
-</ul>
+</table>
