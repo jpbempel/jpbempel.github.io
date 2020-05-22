@@ -56,6 +56,8 @@ Now let's run it with different cpus from docker:
 docker run --cpus=<n> -ti spring-petclinic
 ```
 
+
+
 | Cpus | JVM startup time (s) |
 | --- | --- |
 | 4 | 12.918 |
@@ -159,8 +161,8 @@ Using containers with CPU quota restriction with only 1 core or less will clearl
 - [Article recommending TieredStopAtLevel=1](https://phauer.com/2017/increase-jvm-development-productivity/)
 
 - TieredCompilation in depth: 
-  - https://www.slideshare.net/maddocig/tiered
-  - https://slideplayer.com/slide/12376325/
+  - [https://www.slideshare.net/maddocig/tiered](https://www.slideshare.net/maddocig/tiered)
+  - [https://slideplayer.com/slide/12376325/](https://slideplayer.com/slide/12376325/)
 
 - [Chris Newland's VM Options Explorer](https://chriswhocodes.com/hotspot_options_jdk8.html)
 
