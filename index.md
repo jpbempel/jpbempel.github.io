@@ -1,4 +1,4 @@
-## Jean-Philippe Bempel's Blog
+## [Jean-Philippe Bempel](/about)'s Blog
 
 <table style="border: 0px">
   {% for post in site.posts %}
