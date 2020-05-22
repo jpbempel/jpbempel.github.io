@@ -3,7 +3,7 @@
 <table style="border: 0px">
   {% for post in site.posts %}
     <tr>
-      <td>{{ post.date | date_to_string }}</td><td><a href="{{ post.url }}">{{ post.title }}</a></td>
+      <td style="border: 0px">{{ post.date | date_to_string }}</td><td style="border: 0px"><a href="{{ post.url }}">{{ post.title }}</a></td>
     </tr>
   {% endfor %}
 </table>
