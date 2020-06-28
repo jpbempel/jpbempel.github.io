@@ -1,13 +1,18 @@
 ---
 layout: default
-title: When Escape Analysis fails yout
+title: "When Escape Analysis fails you"
 date:
 ---
 # When Escape Analysis fails you
 
 ## Escape Analysis
 
+## Objects.hashCode
+devoxx, jmh benchmark
 
+analysis of JITed code
+
+try on JDK8, JDK 11 and JDK14-15 ref C Gracie improvements
 
 
 ## References
