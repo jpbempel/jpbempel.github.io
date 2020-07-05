@@ -14,7 +14,8 @@ analysis of JITed code
 
 try on JDK8, JDK 11 and JDK14-15 ref C Gracie improvements?
 
-deeper analysis with fastdebug build (shipilev) for PrintEscapeAnalysis VM options 
+deeper analysis with fastdebug build (shipilev) for PrintEliminateAllocations VM options
+ => works for rawVarArgs version
 
 ## References
  - [Abstractions Without Regret with GraalVM by Thomas Wuerthinger @ Devoxx BE 2019](https://youtu.be/noX2uHA2Udo?t=1532)
