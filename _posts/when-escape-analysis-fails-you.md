@@ -348,7 +348,7 @@ Assembly output:
 We don't have the allocation, but still generated code is very convoluted.
 
 ### rawVarArgsObjectHash
-With the method `rawVarArgsObjectHash` we keep the varargs array but we don't iterate on it but unrolling manually the loop with distinct calls.
+With the method `rawVarArgsObjectHash` we keep the varargs array but we don't iterate on it, unrolling manually the loop with distinct calls.
 
 Inlining decision:
 ```
