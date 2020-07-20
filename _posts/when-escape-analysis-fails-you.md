@@ -393,90 +393,96 @@ Can we diagnostic the EA decision? Looking at [VM Option Explorer](https://chris
 
 EA report:
 ``` 
-======== Connection graph for  ObjectsHashJIT::bench
-JavaObject NoEscape(NoEscape) [ 266F 263F [ 63 ]]   51	AllocateArray	===  5  6  7  8  1 ( 49  34  39  33  1  11  1  10 ) [[ 52  53  54  61  62  63 ]]  rawptr:NotNull ( int:>=0, java/lang/Object:NotNull *, bool, int ) ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1  Type:{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:rawptr:NotNull} !jvms: ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1
-LocalVar NoEscape(NoEscape) [ 51P [ 266b 263b ]]   63	Proj	===  51  [[ 64  266  263 ]] #5  Type:rawptr:NotNull !jvms: ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1
-
-Scalar  51	AllocateArray	===  5  6  7  8  1 ( 49  34  39  33  1  11  1  10 ) [[ 52  53  54  61  62  63 ]]  rawptr:NotNull ( int:>=0, java/lang/Object:NotNull *, bool, int ) ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1  Type:{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:rawptr:NotNull} !jvms: ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1
-++++ Eliminated: 51 AllocateArray
-
+======== Connection graph for  ObjectsHashJIT::bench                                                                                                                    
+JavaObject NoEscape(NoEscape) [ 266F 263F [ 63 ]]   51  AllocateArray   ===  5  6  7  8  1 ( 49  34  39  33  1  11  1  10 ) [[ 52  53  54  61  62  63 ]]  rawptr:NotNull
+ ( int:>=0, java/lang/Object:NotNull *, bool, int ) ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1 !jvms: ObjectsHashJIT::rawVarArgsO
+bjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1                                                                                                                  
+LocalVar [ 51P [ 266b 263b ]]   63      Proj    ===  51  [[ 64  266  263 ]] #5 !jvms: ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1 
+                                                                                                                                                                        
+Scalar  51      AllocateArray   ===  5  6  7  8  1 ( 49  34  39  33  1  11  1  10 ) [[ 52  53  54  61  62  63 ]]  rawptr:NotNull ( int:>=0, java/lang/Object:NotNull *, 
+bool, int ) ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1 !jvms: ObjectsHashJIT::rawVarArgsObjectHash_noargs @ bci:1 ObjectsHashJIT:
+:bench @ bci:1                                                                                                                                                          
+++++ Eliminated: 51 AllocateArray                                                                                                                                       
 ``` 
 The allocation of an array was indeed eliminated (`Eliminated: 51 AllocateArray`)
 
 ### iterVarArgsObjectsHash
 we have kept the varargs but reintroduced the iteration over the varargs array in a form very similar to `Arrays.hashCode`.
 
-Inlining decision
+Inlining decision:
 ```
-  @ 1   ObjectsHashJIT::iterVarArgsObjectsHash_noargs (22 bytes)   inline (hot)
-    @ 18   ObjectsHashJIT::iterVarArgsObjectsHash (58 bytes)   inline (hot)
-      @ 44   java.lang.Integer::hashCode (8 bytes)   inline (hot)
-      @ 44   java.lang.Double::hashCode (8 bytes)   inline (hot)
-       \-> TypeProfile (2234/4468 counts) = java/lang/Double
-       \-> TypeProfile (2234/4468 counts) = java/lang/Integer
-        @ 4   java.lang.Double::hashCode (13 bytes)   inline (hot)
-          @ 1   java.lang.Double::doubleToLongBits (16 bytes)   (intrinsic)
-        @ 4   java.lang.Integer::hashCode (2 bytes)   inline (hot)
+	@ 1   ObjectsHashJIT::iterVarArgsObjectsHash_noargs (22 bytes)   inline (hot)
+	  @ 18   ObjectsHashJIT::iterVarArgsObjectsHash (5 bytes)   inline (hot)
+		@ 1   java.util.Arrays::hashCode (56 bytes)   inline (hot)
+		  @ 43   java.lang.Integer::hashCode (8 bytes)   inline (hot)
+		  @ 43   java.lang.Double::hashCode (8 bytes)   inline (hot)
+		   \-> TypeProfile (4290/8580 counts) = java/lang/Double
+		   \-> TypeProfile (4290/8580 counts) = java/lang/Integer
+			@ 4   java.lang.Double::hashCode (13 bytes)   inline (hot)
+			  @ 1   java.lang.Double::doubleToLongBits (16 bytes)   (intrinsic)
+			@ 4   java.lang.Integer::hashCode (2 bytes)   inline (hot)
 ```
-Surprisingly, inlining is full with an explicit bimorphic call (2 TypeProfiles).
-
+Assembly output:
 ``` 
-  0x0000018fbd4a92d0:   mov    DWORD PTR [rsp-0x7000],eax
-  0x0000018fbd4a92d7:   push   rbp
-  0x0000018fbd4a92d8:   sub    rsp,0x30
-  0x0000018fbd4a92dc:   mov    QWORD PTR [rsp],rdx
-  0x0000018fbd4a92e0:   mov    ebp,r8d
-  0x0000018fbd4a92e3:   mov    rax,QWORD PTR [r15+0x120]
-  0x0000018fbd4a92ea:   mov    r10,rax
-  0x0000018fbd4a92ed:   add    r10,0x18
-  0x0000018fbd4a92f1:   cmp    r10,QWORD PTR [r15+0x130]
-  0x0000018fbd4a92f8:   jae    0x0000018fbd4a93ab
-  0x0000018fbd4a92fe:   mov    QWORD PTR [r15+0x120],r10
-  0x0000018fbd4a9305:   prefetchw BYTE PTR [r10+0xc0]
-  0x0000018fbd4a930d:   mov    QWORD PTR [rax],0x1
-  0x0000018fbd4a9314:   prefetchw BYTE PTR [r10+0x100]
-  0x0000018fbd4a931c:   mov    DWORD PTR [rax+0x8],0x2115   ;   {metadata('java/lang/Object'[])}
-  0x0000018fbd4a9323:   prefetchw BYTE PTR [r10+0x140]
-  0x0000018fbd4a932b:   mov    DWORD PTR [rax+0xc],0x2
-  0x0000018fbd4a9332:   prefetchw BYTE PTR [r10+0x180]
-  0x0000018fbd4a933a:   mov    r10,QWORD PTR [rsp]
-  0x0000018fbd4a933e:   mov    r8d,DWORD PTR [r10+0x10]
-  0x0000018fbd4a9342:   mov    r10d,DWORD PTR [r10+0xc]
-  0x0000018fbd4a9346:   mov    DWORD PTR [rax+0x10],r10d
-  0x0000018fbd4a934a:   mov    DWORD PTR [rax+0x14],r8d
-  0x0000018fbd4a934e:   test   r10d,r10d
-  0x0000018fbd4a9351:   je     0x0000018fbd4a93c5
-  0x0000018fbd4a9353:   mov    r9d,DWORD PTR [r10+0xc]
-  0x0000018fbd4a9357:   mov    r11d,r9d
-  0x0000018fbd4a935a:   shl    r11d,0x5
-  0x0000018fbd4a935e:   sub    r11d,r9d
-  0x0000018fbd4a9361:   test   r8d,r8d
-  0x0000018fbd4a9364:   je     0x0000018fbd4a93d8
-  0x0000018fbd4a9366:   vmovsd xmm0,QWORD PTR [r8+0x10]
-  0x0000018fbd4a936c:   vucomisd xmm0,xmm0
-  0x0000018fbd4a9370:   jp     0x0000018fbd4a9374
-  0x0000018fbd4a9372:   je     0x0000018fbd4a9397
-  0x0000018fbd4a9374:   mov    eax,0x7ff80000
-  0x0000018fbd4a9379:   add    eax,r11d
-  0x0000018fbd4a937c:   add    eax,r9d
-  0x0000018fbd4a937f:   add    eax,ebp
-  0x0000018fbd4a9381:   add    eax,0x400
-  0x0000018fbd4a9387:   add    rsp,0x30
-  0x0000018fbd4a938b:   pop    rbp
-  0x0000018fbd4a938c:   mov    r10,QWORD PTR [r15+0x110]
-  0x0000018fbd4a9393:   test   DWORD PTR [r10],eax          ;   {poll_return}
-  0x0000018fbd4a9396:   ret    
+  0x000001d2ef949bd0:   mov    DWORD PTR [rsp-0x7000],eax
+  0x000001d2ef949bd7:   push   rbp
+  0x000001d2ef949bd8:   sub    rsp,0x30
+  0x000001d2ef949bdc:   mov    QWORD PTR [rsp],rdx
+  0x000001d2ef949be0:   mov    ebp,r8d
+  0x000001d2ef949be3:   mov    rax,QWORD PTR [r15+0x120]
+  0x000001d2ef949bea:   mov    r10,rax
+  0x000001d2ef949bed:   add    r10,0x18
+  0x000001d2ef949bf1:   cmp    r10,QWORD PTR [r15+0x130]
+  0x000001d2ef949bf8:   jae    0x000001d2ef949ca8
+  0x000001d2ef949bfe:   mov    QWORD PTR [r15+0x120],r10
+  0x000001d2ef949c05:   prefetchw BYTE PTR [r10+0xc0]
+  0x000001d2ef949c0d:   mov    QWORD PTR [rax],0x1
+  0x000001d2ef949c14:   prefetchw BYTE PTR [r10+0x100]
+  0x000001d2ef949c1c:   mov    DWORD PTR [rax+0x8],0x2115   ;   {metadata('java/lang/Object'[])}
+  0x000001d2ef949c23:   prefetchw BYTE PTR [r10+0x140]
+  0x000001d2ef949c2b:   mov    DWORD PTR [rax+0xc],0x2
+  0x000001d2ef949c32:   prefetchw BYTE PTR [r10+0x180]
+  0x000001d2ef949c3a:   mov    r10,QWORD PTR [rsp]
+  0x000001d2ef949c3e:   mov    r11d,DWORD PTR [r10+0x10]
+  0x000001d2ef949c42:   mov    r8d,DWORD PTR [r10+0xc]
+  0x000001d2ef949c46:   mov    DWORD PTR [rax+0x10],r8d
+  0x000001d2ef949c4a:   mov    DWORD PTR [rax+0x14],r11d
+  0x000001d2ef949c4e:   test   r8d,r8d
+  0x000001d2ef949c51:   je     0x000001d2ef949cc5
+  0x000001d2ef949c53:   mov    r9d,DWORD PTR [r8+0xc]
+  0x000001d2ef949c57:   mov    r10d,r9d
+  0x000001d2ef949c5a:   shl    r10d,0x5
+  0x000001d2ef949c5e:   sub    r10d,r9d
+  0x000001d2ef949c61:   test   r11d,r11d
+  0x000001d2ef949c64:   je     0x000001d2ef949cd2
+  0x000001d2ef949c66:   vmovsd xmm0,QWORD PTR [r11+0x10]
+  0x000001d2ef949c6c:   vucomisd xmm0,xmm0
+  0x000001d2ef949c70:   jp     0x000001d2ef949c74
+  0x000001d2ef949c72:   je     0x000001d2ef949c94
+  0x000001d2ef949c74:   mov    eax,0x7ff80000
+  0x000001d2ef949c79:   add    eax,r10d
+  0x000001d2ef949c7c:   add    eax,ebp
+  0x000001d2ef949c7e:   add    eax,0x3c1
+  0x000001d2ef949c84:   add    rsp,0x30
+  0x000001d2ef949c88:   pop    rbp
+  0x000001d2ef949c89:   mov    r10,QWORD PTR [r15+0x110]
+  0x000001d2ef949c90:   test   DWORD PTR [r10],eax          ;   {poll_return}
+  0x000001d2ef949c93:   ret
 ``` 
-Ouch, as we save the virtual call, now we have lost the elimination of the varargs array allocation.
+Ouch, now we have lost the elimination of the varargs array allocation just by iterating on it!
 
 Confirmed with EA report:
 ```
-======== Connection graph for  ObjectsHashJIT::bench
-JavaObject NoEscape(NoEscape) NSR [ 377F 380F 203F 204F [ 63 68 ]]   51	AllocateArray	===  5  6  7  8  1 ( 49  34  39  33  1  11  1  10 ) [[ 52  53  54  61  62  63 ]]  rawptr:NotNull ( int:>=0, java/lang/Object:NotNull *, bool, int ) ObjectsHashJIT::iterVarArgsObjectsHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1  Type:{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:rawptr:NotNull} !jvms: ObjectsHashJIT::iterVarArgsObjectsHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1
-LocalVar NoEscape(NoEscape) [ 51P [ 68 377b 380b ]]   63	Proj	===  51  [[ 64  68  377  380 ]] #5  Type:rawptr:NotNull !jvms: ObjectsHashJIT::iterVarArgsObjectsHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1
-LocalVar NoEscape(NoEscape) [ 63 51P [ 203b 204b ]]   68	CheckCastPP	===  65  63  [[ 393  251  147  134  204  203  221  160  194  194  204 ]]   Type:narrowoop: java/lang/Object:BotPTR *[int:2]:NotNull:exact * !jvms: ObjectsHashJIT::iterVarArgsObjectsHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1
-
-=== No allocations eliminated for  ObjectsHashJIT::bench since there are no scalar replaceable candidates ===
+======== Connection graph for  ObjectsHashJIT::bench                                                                                                                    
+JavaObject NoEscape(NoEscape) NSR [ 390F 393F 213F 214F [ 63 68 ]]   51 AllocateArray   ===  5  6  7  8  1 ( 49  34  39  33  1  11  1  10 ) [[ 52  53  54  61  62  63 ]]
+  rawptr:NotNull ( int:>=0, java/lang/Object:NotNull *, bool, int ) ObjectsHashJIT::iterVarArgsObjectsHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1  Type:{0:control
+, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:rawptr:NotNull} !jvms: ObjectsHashJIT::iterVarArgsObjectsHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1     
+LocalVar NoEscape(NoEscape) [ 51P [ 68 390b 393b ]]   63        Proj    ===  51  [[ 64  68  390  393 ]] #5  Type:rawptr:NotNull !jvms: ObjectsHashJIT::iterVarArgsObject
+sHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1                                                                                                                      
+LocalVar NoEscape(NoEscape) [ 63 51P [ 213b 214b ]]   68        CheckCastPP     ===  65  63  [[ 406  261  157  144  214  213  231  170  204  204  214 ]]   Type:narrowoo
+p: java/lang/Object:BotPTR *[int:2]:NotNull:exact * !jvms: ObjectsHashJIT::iterVarArgsObjectsHash_noargs @ bci:1 ObjectsHashJIT::bench @ bci:1                          
+                                                                                                                                                                        
+=== No allocations eliminated for  ObjectsHashJIT::bench since there are no scalar replaceable candidates ===                                                           
 ```
 Despite the fact that all objects are `NoEscape`!
 
