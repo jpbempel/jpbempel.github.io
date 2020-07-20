@@ -486,7 +486,8 @@ p: java/lang/Object:BotPTR *[int:2]:NotNull:exact * !jvms: ObjectsHashJIT::iterV
 ```
 Despite the fact that all objects are `NoEscape`!
 
-
+## Conclusion
+Escape Analysis seems to fail for no ovious reason to elimnate the varargs array allocation which prevents to use freely `Objects.hashCode` method. Is it something that could be fixed easily?
 
 ## References
  - [Abstractions Without Regret with GraalVM by Thomas Wuerthinger @ Devoxx BE 2019](https://youtu.be/noX2uHA2Udo?t=1532)
@@ -494,8 +495,6 @@ Despite the fact that all objects are `NoEscape`!
  - [Anatomy Quarks #4: TLAB allocation](https://shipilev.net/jvm/anatomy-quarks/4-tlab-allocation/)
  - [Anatomy Quarks #18: Scalar replacement](https://shipilev.net/jvm/anatomy-quarks/18-scalar-replacement/)
  - [Black magic method dispath](https://shipilev.net/blog/2015/black-magic-method-dispatch/)
- - [Stack allocation prototype for C2 by Charlie Gracie](https://mail.openjdk.java.net/pipermail/hotspot-compiler-dev/2020-January/036835.html)
- - [patch for stack allocation for C2](https://mail.openjdk.java.net/pipermail/hotspot-compiler-dev/2020-June/038779.html)
  - [Stack Allocation JEP proposal](https://github.com/microsoft/openjdk-proposals/blob/master/stack_allocation/Stack_Allocation_JEP.md)
  - https://twitter.com/HansWurst315/status/1246003165478166528
  - [Compiler Control](https://openjdk.java.net/jeps/165)
