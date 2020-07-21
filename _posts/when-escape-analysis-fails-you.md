@@ -387,7 +387,7 @@ Assembly output:
 ```
 No varargs allocation! We have something similar to `rawObjectsHash` but using the varargs notation.
 
-Can we diagnostic the EA decision? Looking at [VM Option Explorer](https://chriswhocodes.com/hotspot_options_jdk14.html), you can found 2 options: `-XX:+PrintEscapeAnalysis` and `-XX:+PrintEliminateAllocations` but both are `notproduct` meaning you cannot use it with a release build of OpenJDK and requires a [fastdebug one](https://builds.shipilev.net/openjdk-jdk14/).
+Can we diagnostic the EA decision? Looking at [VM Option Explorer](https://chriswhocodes.com/hotspot_options_jdk14.html), you can found 2 options: `-XX:+PrintEscapeAnalysis` and `-XX:+PrintEliminateAllocations` but both are `notproduct` meaning you cannot use it with a release build of OpenJDK and requires a [fastdebug one](https://builds.shipilev.net/openjdk-jdk14/). We are also using `-XX:+Verbose` to have more information about eliminated allocations.
 
 EA report:
 ``` 
