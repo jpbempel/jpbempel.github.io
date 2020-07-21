@@ -232,8 +232,6 @@ Inlining decision:
       @ 4   java.lang.Double::hashCode (13 bytes)   inline (hot)
         @ 1   java.lang.Double::doubleToLongBits (16 bytes)   (intrinsic)
 ``` 
-Compared to the `jdkObjectsHash` method, we are able to devirtualize and inline down to Integer::hashCode an Double::hashCode, where the first experiment shows us `@ 43   java.lang.Object::hashCode (0 bytes)   (intrinsic, virtual)`! Iterating on the array makes the call to `Object.hashCode` megamorphic while in this particular case I was expecting a [bimorphic call](https://shipilev.net/blog/2015/black-magic-method-dispatch/#_discussion_ii) because we have only 2 target types.
-
 Assembly output:
 ```
   0x000001d2abe5ded0:   mov    DWORD PTR [rsp-0x7000],eax
