@@ -492,7 +492,6 @@ Escape Analysis seems to fail for no ovious reason to elimnate the varargs array
  - [Escape Analysis (Hotspot Wiki)](https://wiki.openjdk.java.net/display/HotSpot/EscapeAnalysis)
  - [Anatomy Quarks #4: TLAB allocation](https://shipilev.net/jvm/anatomy-quarks/4-tlab-allocation/)
  - [Anatomy Quarks #18: Scalar replacement](https://shipilev.net/jvm/anatomy-quarks/18-scalar-replacement/)
- - [Black magic method dispath](https://shipilev.net/blog/2015/black-magic-method-dispatch/)
  - [Stack Allocation JEP proposal](https://github.com/microsoft/openjdk-proposals/blob/master/stack_allocation/Stack_Allocation_JEP.md)
  - https://twitter.com/HansWurst315/status/1246003165478166528
  - [Compiler Control](https://openjdk.java.net/jeps/165)
