@@ -485,7 +485,7 @@ p: java/lang/Object:BotPTR *[int:2]:NotNull:exact * !jvms: ObjectsHashJIT::iterV
 Despite the fact that all objects are `NoEscape`!
 
 ## Conclusion
-Escape Analysis seems to fail for no ovious reason to elimnate the varargs array allocation which prevents to use freely `Objects.hashCode` method. Is it something that could be fixed easily?
+Escape Analysis seems to fail, for no obvious reason, to elimnate the varargs array allocation which prevents to use freely `Objects.hashCode` method. Is it something that could be fixed easily?
 
 ## References
  - [Abstractions Without Regret with GraalVM by Thomas Wuerthinger @ Devoxx BE 2019](https://youtu.be/noX2uHA2Udo?t=1532)
