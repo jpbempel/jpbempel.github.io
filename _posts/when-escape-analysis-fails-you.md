@@ -6,10 +6,10 @@ date:
 # When Escape Analysis fails you?
 
 ## Context
-In november 2019, I was attending a presentation by [Thomas Wuerthinger](https://twitter.com/thomaswue) about [Abstractions Without Regret with GraalVM](https://youtu.be/noX2uHA2Udo?t=1532) at Devoxx in Antwerp. He took a simple example using `Objects#hash()` that was significantly faster with Graal Compiler than C2. I was deeply surprised by that. it was obvious that the allocation of the varargs was the culprit: It was eliminated in the case of Graal but not in the C2 one. Why the Escape Analysis failed here?
+In november 2019, I was attending a presentation by [Thomas Wuerthinger](https://twitter.com/thomaswue) about [Abstractions Without Regret with GraalVM](https://youtu.be/noX2uHA2Udo?t=1532) at Devoxx in Antwerp. He took a simple example using `Objects#hash()` that was significantly faster with Graal Compiler than C2. I was deeply surprised by that. it was obvious that the allocation of the varargs was the culprit: It was eliminated by Graal but not by C2. Why did the Escape Analysis fail here?
 
 ## Escape Analysis
-This post is not intended to introduce you what is Escape Analysis (EA) there are plenty of other articles for that (see References). 
+This post is not intended to introduce you what Escape Analysis (EA) is, there are plenty of other articles for that (see References). 
 Though I will just say that EA is not an optimization per se, but an analysis phase (hence the name ;-)) that gather information to ba able to apply some optimizations like lock elision, [scalar replacement](https://shipilev.net/jvm/anatomy-quarks/18-scalar-replacement/) or even [stack allocation](https://github.com/microsoft/openjdk-proposals/blob/master/stack_allocation/Stack_Allocation_JEP.md).
 
 ## Objects#hashCode
