@@ -124,6 +124,12 @@ I run the first method `jdkObjectsHash` in `bench` method which exercised the co
   }
 ]
 ```
+
+```
+    private int jdkObjectsHash() {
+        return Objects.hash(integerField, doubleField);
+    }
+```
 First the inlining decision:
 ```
 	@ 1   ObjectsHashJIT::jdkObjectsHash (22 bytes)   inline (hot)                    
@@ -223,6 +229,15 @@ Here the code is more compact, no allocation.
 
 ### rawObjectsHash
 Let's see with my `rawObjectsHash` method which manually unroll and inline the computation of the hash of the 2 fields.
+```
+    private int rawObjectsHash() {
+        int res = 1;
+        res += 31 * res + integerField.hashCode();
+        res += 31 * res + doubleField.hashCode();
+        return  res;
+    }
+```
+
 Inlining decision:
 ```
   @ 1   ObjectsHashJIT::rawObjectsHash (34 bytes)   inline (hot)
@@ -263,6 +278,11 @@ We have now something that is very similar to the Graal output. I don't know if 
 
 ### noVarArgsObjectsHash
 Let's try to avoid the allocation of varargs array. The method `noVarArgsObjectsHash` calls `Arrays.hashCode` with pre-allocated array.
+```
+    private int noVarArgsObjectsHash() {
+        return Arrays.hashCode(fields);
+    }
+```
 Inlining decision:
 ```
 	@ 1   ObjectsHashJIT::noVarArgsObjectsHash (8 bytes)   inline (hot)            
@@ -347,7 +367,14 @@ We don't have the allocation, but still generated code is very convoluted.
 
 ### rawVarArgsObjectHash
 With the method `rawVarArgsObjectHash` we keep the varargs array but we don't iterate on it, unrolling manually the loop with distinct calls.
-
+```
+    private static int rawVarArgsObjectsHash(Object... elements) {
+        int res = 1;
+        res += 31 * res + elements[0].hashCode();
+        res += 31 * res + elements[1].hashCode();
+        return res;
+    }
+```
 Inlining decision:
 ```
 	@ 1   ObjectsHashJIT::rawVarArgsObjectHash_noargs (22 bytes)   inline (hot)              
@@ -406,6 +433,17 @@ The allocation of an array was indeed eliminated (`Eliminated: 51 AllocateArray`
 
 ### iterVarArgsObjectsHash
 we have kept the varargs but reintroduced the iteration over the varargs array in a form very similar to `Arrays.hashCode`.
+
+```
+    private static int iterVarArgsObjectsHash(Object... elements) {
+        if (elements == null)
+            return 0;
+        int result = 1;
+        for (Object element : elements)
+            result += 31 * result + (element == null ? 0 : element.hashCode());
+        return result;
+    }
+```
 
 Inlining decision:
 ```
