@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "When Escape Analysis fails you?"
-date:
+date: 2020-08-02
 ---
 # When Escape Analysis fails you?
 
