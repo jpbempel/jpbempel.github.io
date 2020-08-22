@@ -527,6 +527,58 @@ Escape Analysis seems to fail, for no obvious reason, to elimnate the varargs ar
 
 Thanks to [Richard Statin](https://twitter.com/richardstartin) & [Charlie Gracie](https://twitter.com/crgracie) for the review!
 
+## Update: 2020-08-22
+
+[Nils Eliasson](@https://twitter.com/nilseliasson) points me to this [change](https://bugs.openjdk.java.net/browse/JDK-8237581) in JDK 15 EA that should improve the situation. After double checking it with a 15-ea build from [builds.shipilev.net](https://builds.shipilev.net/openjdk-jdk15/), here are the result for `jdkObjectsHash`:
+
+Inlining decision (no change):
+``` 
+	@ 1   ObjectsHashJIT::jdkObjectsHash (22 bytes)   inline (hot)
+	  @ 18   java.util.Objects::hash (5 bytes)   inline (hot)
+		@ 1   java.util.Arrays::hashCode (56 bytes)   inline (hot)
+		  @ 43   java.lang.Integer::hashCode (8 bytes)   inline (hot)
+		  @ 43   java.lang.Double::hashCode (8 bytes)   inline (hot)
+		   \-> TypeProfile (4775/9550 counts) = java/lang/Double
+		   \-> TypeProfile (4775/9550 counts) = java/lang/Integer
+			@ 4   java.lang.Double::hashCode (13 bytes)   inline (hot)
+			  @ 1   java.lang.Double::doubleToLongBits (16 bytes)   (intrinsic)
+			@ 4   java.lang.Integer::hashCode (2 bytes)   inline (hot)
+```
+
+Assembly output:
+
+```
+  0x000001f927c7bda0:   mov    DWORD PTR [rsp-0x7000],eax
+  0x000001f927c7bda7:   push   rbp
+  0x000001f927c7bda8:   sub    rsp,0x30
+  0x000001f927c7bdac:   mov    r11d,DWORD PTR [rdx+0x10]
+  0x000001f927c7bdb0:   mov    r10d,DWORD PTR [rdx+0xc]
+  0x000001f927c7bdb4:   test   r10d,r10d
+  0x000001f927c7bdb7:   je     0x000001f927c7be1d
+  0x000001f927c7bdbd:   mov    ebx,DWORD PTR [r10+0xc]
+  0x000001f927c7bdc1:   mov    r9d,ebx
+  0x000001f927c7bdc4:   shl    r9d,0x5
+  0x000001f927c7bdc8:   sub    r9d,ebx
+  0x000001f927c7bdcb:   test   r11d,r11d
+  0x000001f927c7bdce:   je     0x000001f927c7be2a
+  0x000001f927c7bdd4:   vmovsd xmm0,QWORD PTR [r11+0x10]
+  0x000001f927c7bdda:   nop    WORD PTR [rax+rax*1+0x0]
+  0x000001f927c7bde0:   vucomisd xmm0,xmm0
+  0x000001f927c7bde4:   jp     0x000001f927c7bde8
+  0x000001f927c7bde6:   je     0x000001f927c7be09
+  0x000001f927c7bde8:   mov    eax,0x7ff80000
+  0x000001f927c7bded:   add    eax,r9d
+  0x000001f927c7bdf0:   add    eax,r8d
+  0x000001f927c7bdf3:   add    eax,0x3c1
+  0x000001f927c7bdf9:   add    rsp,0x30
+  0x000001f927c7bdfd:   pop    rbp
+  0x000001f927c7bdfe:   mov    r10,QWORD PTR [r15+0x110]
+  0x000001f927c7be05:   test   DWORD PTR [r10],eax          ;   {poll_return}
+  0x000001f927c7be08:   ret
+```
+
+Which much better now! Thanks Nils for fixing this!
+
 ## References
  - [Abstractions Without Regret with GraalVM by Thomas Wuerthinger @ Devoxx BE 2019](https://youtu.be/noX2uHA2Udo?t=1532)
  - [Escape Analysis (Hotspot Wiki)](https://wiki.openjdk.java.net/display/HotSpot/EscapeAnalysis)
