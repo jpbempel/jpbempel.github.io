@@ -529,7 +529,7 @@ Thanks to [Richard Statin](https://twitter.com/richardstartin) & [Charlie Gracie
 
 ## Update: 2020-08-22
 
-[Nils Eliasson](https://twitter.com/nilseliasson) points me to this [change](https://bugs.openjdk.java.net/browse/JDK-8237581) in JDK 15 EA that should improve the situation. After double checking it with a 15-ea build from [builds.shipilev.net](https://builds.shipilev.net/openjdk-jdk15/), here are the result for `jdkObjectsHash`:
+[Nils Eliasson](https://twitter.com/nilseliasson) points me to this [change](https://bugs.openjdk.java.net/browse/JDK-8231291) in JDK 15 EA that should improve the situation. After double checking it with a 15-ea build from [builds.shipilev.net](https://builds.shipilev.net/openjdk-jdk15/), here are the result for `jdkObjectsHash`:
 
 Inlining decision (no change):
 ``` 
@@ -577,7 +577,7 @@ Assembly output:
   0x000001f927c7be08:   ret
 ```
 
-Which much better now! Thanks Nils for fixing this!
+Which much better now! 
 
 ## References
  - [Abstractions Without Regret with GraalVM by Thomas Wuerthinger @ Devoxx BE 2019](https://youtu.be/noX2uHA2Udo?t=1532)
@@ -587,4 +587,5 @@ Which much better now! Thanks Nils for fixing this!
  - [Stack Allocation JEP proposal](https://github.com/microsoft/openjdk-proposals/blob/master/stack_allocation/Stack_Allocation_JEP.md)
  - https://twitter.com/HansWurst315/status/1246003165478166528
  - [Compiler Control](https://openjdk.java.net/jeps/165)
- - Update: [JDK-8237581 Improve allocation expansion](https://bugs.openjdk.java.net/browse/JDK-8237581)
+ - Update: [JDK-8231291 C2: loop opts before EA should maximally unroll loops
+](https://bugs.openjdk.java.net/browse/JDK-8231291)
