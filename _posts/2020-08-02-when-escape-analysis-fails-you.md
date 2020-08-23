@@ -527,7 +527,7 @@ Escape Analysis seems to fail, for no obvious reason, to elimnate the varargs ar
 
 Thanks to [Richard Statin](https://twitter.com/richardstartin) & [Charlie Gracie](https://twitter.com/crgracie) for the review!
 
-## Update: 2020-08-22
+## Update: 2020-08-23
 
 [Nils Eliasson](https://twitter.com/nilseliasson) points me to this [change](https://bugs.openjdk.java.net/browse/JDK-8231291) in JDK 15 EA that should improve the situation. After double checking it with a 15-ea build from [builds.shipilev.net](https://builds.shipilev.net/openjdk-jdk15/), here are the result for `jdkObjectsHash`:
 
@@ -577,7 +577,7 @@ Assembly output:
   0x000001f927c7be08:   ret
 ```
 
-Which much better now! 
+Which is much better now! 
 
 ## References
  - [Abstractions Without Regret with GraalVM by Thomas Wuerthinger @ Devoxx BE 2019](https://youtu.be/noX2uHA2Udo?t=1532)
