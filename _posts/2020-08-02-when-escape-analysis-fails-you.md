@@ -525,7 +525,7 @@ Despite the fact that all objects are `NoEscape`!
 ## Conclusion
 Escape Analysis seems to fail, for no obvious reason, to elimnate the varargs array allocation which prevents to use freely `Objects.hashCode` method. Is it something that could be fixed easily?
 
-Thanks to [Richard Statin](https://twitter.com/richardstartin) & [Charlie Gracie](https://twitter.com/crgracie) for the review!
+Thanks to [Richard Startin](https://twitter.com/richardstartin) & [Charlie Gracie](https://twitter.com/crgracie) for the review!
 
 ## Update: 2020-08-23
 
