@@ -585,7 +585,7 @@ Which is much better now!
  - [Anatomy Quarks #4: TLAB allocation](https://shipilev.net/jvm/anatomy-quarks/4-tlab-allocation/)
  - [Anatomy Quarks #18: Scalar replacement](https://shipilev.net/jvm/anatomy-quarks/18-scalar-replacement/)
  - [Stack Allocation JEP proposal](https://github.com/microsoft/openjdk-proposals/blob/master/stack_allocation/Stack_Allocation_JEP.md)
- - https://twitter.com/HansWurst315/status/1246003165478166528
+ - [https://twitter.com/HansWurst315/status/1246003165478166528](https://twitter.com/HansWurst315/status/1246003165478166528)
  - [Compiler Control](https://openjdk.java.net/jeps/165)
  - Update: [JDK-8231291 C2: loop opts before EA should maximally unroll loops
 ](https://bugs.openjdk.java.net/browse/JDK-8231291)
