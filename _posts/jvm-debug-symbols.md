@@ -63,17 +63,149 @@ here we have line number information from where the exception was thrown.
 
 `javac -g:none LineNumbers.java && java LineNumbers`
 
-```sh
+```
 Exception in thread "main" java.lang.RuntimeException: boo
 	at LineNumbers.main(Unknown Source)
 ```
 
-we can inspect with `javap`
+we can inspect with `javap` the classfile compiled with `-g:none`
+```
+javap -v LineNumbers.class
+Classfile LineNumbers.class
+  Last modified Mar 2, 2022; size 269 bytes
+  MD5 checksum b62074a0ce6b44279a6fc3b347132cd0
+public class LineNumbers
+  minor version: 0
+  major version: 55
+  flags: (0x0021) ACC_PUBLIC, ACC_SUPER
+  this_class: #5                          // LineNumbers
+  super_class: #6                         // java/lang/Object
+  interfaces: 0, fields: 0, methods: 2, attributes: 0
+Constant pool:
+   #1 = Methodref          #6.#12         // java/lang/Object."<init>":()V
+   #2 = Class              #13            // java/lang/RuntimeException
+   #3 = String             #14            // boo
+   #4 = Methodref          #2.#15         // java/lang/RuntimeException."<init>":(Ljava/lang/String;)V
+   #5 = Class              #16            // LineNumbers
+   #6 = Class              #17            // java/lang/Object
+   #7 = Utf8               <init>
+   #8 = Utf8               ()V
+   #9 = Utf8               Code
+  #10 = Utf8               main
+  #11 = Utf8               ([Ljava/lang/String;)V
+  #12 = NameAndType        #7:#8          // "<init>":()V
+  #13 = Utf8               java/lang/RuntimeException
+  #14 = Utf8               boo
+  #15 = NameAndType        #7:#18         // "<init>":(Ljava/lang/String;)V
+  #16 = Utf8               LineNumbers
+  #17 = Utf8               java/lang/Object
+  #18 = Utf8               (Ljava/lang/String;)V
+{
+  public LineNumbers();
+    descriptor: ()V
+    flags: (0x0001) ACC_PUBLIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: return
 
+  public static void main(java.lang.String[]);
+    descriptor: ([Ljava/lang/String;)V
+    flags: (0x0009) ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=1, args_size=1
+         0: new           #2                  // class java/lang/RuntimeException
+         3: dup
+         4: ldc           #3                  // String boo
+         6: invokespecial #4                  // Method java/lang/RuntimeException."<init>":(Ljava/lang/String;)V
+         9: athrow
+}
+```
+
+now with  `-g` option (full debug info):
+```
+Classfile /Users/jean-philippe.bempel/projects/tmp/LineNumbers.class
+  Last modified Mar 2, 2022; size 460 bytes
+  MD5 checksum fb5afda47b438ece75b4e4121d8e4786
+  Compiled from "LineNumbers.java"
+public class LineNumbers
+  minor version: 0
+  major version: 55
+  flags: (0x0021) ACC_PUBLIC, ACC_SUPER
+  this_class: #5                          // LineNumbers
+  super_class: #6                         // java/lang/Object
+  interfaces: 0, fields: 0, methods: 2, attributes: 1
+Constant pool:
+   #1 = Methodref          #6.#20         // java/lang/Object."<init>":()V
+   #2 = Class              #21            // java/lang/RuntimeException
+   #3 = String             #22            // boo
+   #4 = Methodref          #2.#23         // java/lang/RuntimeException."<init>":(Ljava/lang/String;)V
+   #5 = Class              #24            // LineNumbers
+   #6 = Class              #25            // java/lang/Object
+   #7 = Utf8               <init>
+   #8 = Utf8               ()V
+   #9 = Utf8               Code
+  #10 = Utf8               LineNumberTable
+  #11 = Utf8               LocalVariableTable
+  #12 = Utf8               this
+  #13 = Utf8               LLineNumbers;
+  #14 = Utf8               main
+  #15 = Utf8               ([Ljava/lang/String;)V
+  #16 = Utf8               args
+  #17 = Utf8               [Ljava/lang/String;
+  #18 = Utf8               SourceFile
+  #19 = Utf8               LineNumbers.java
+  #20 = NameAndType        #7:#8          // "<init>":()V
+  #21 = Utf8               java/lang/RuntimeException
+  #22 = Utf8               boo
+  #23 = NameAndType        #7:#26         // "<init>":(Ljava/lang/String;)V
+  #24 = Utf8               LineNumbers
+  #25 = Utf8               java/lang/Object
+  #26 = Utf8               (Ljava/lang/String;)V
+{
+  public LineNumbers();
+    descriptor: ()V
+    flags: (0x0001) ACC_PUBLIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: return
+      LineNumberTable:
+        line 1: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0       5     0  this   LLineNumbers;
+
+  public static void main(java.lang.String[]);
+    descriptor: ([Ljava/lang/String;)V
+    flags: (0x0009) ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=1, args_size=1
+         0: new           #2                  // class java/lang/RuntimeException
+         3: dup
+         4: ldc           #3                  // String boo
+         6: invokespecial #4                  // Method java/lang/RuntimeException."<init>":(Ljava/lang/String;)V
+         9: athrow
+      LineNumberTable:
+        line 3: 0
+      LocalVariableTable:
+        Start  Length  Slot  Name   Signature
+            0      10     0  args   [Ljava/lang/String;
+}
+SourceFile: "LineNumbers.java"
+```
+
+We now know that the source filename is `LineNumbers.java`, and for each method we have `LineNumberTable` and `LocalVariableTable`
 
 ### sizes
-what is the impact on the classfile size:
-test with an exception to see the difference
+What is the impact on the classfile size:
+
+|SourceFile|-g:none|-g|%|
+|-|-|-|-|
+|LineNumbers.java|269B|460B|+71%|
+|[CommandLine.java](https://github.com/remkop/picocli/blob/main/src/main/java/picocli/CommandLine.java)|64,273B|80,074B|+24%|
 
 
 ### gradle defaults:
