@@ -1,12 +1,14 @@
 # JVM debug symbols
 
-Recently I stumbole upon this tweet:
+Recently I stumble upon this tweet:
 
 https://twitter.com/ne_skazu/status/1491158726258364416
-When you are used to work on the JVM it's ture that's very convenient and magic.
+
+
+When you are used to work on the JVM it's sure that's very convenient and magic.
 Also, you are familiar with stacktraces like for example the ones that are associated with exceptions:
 
-```java
+```
 java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
         at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:36) ~[classes!/:2.2.0.BUILD-SNAPSHOT]
         at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_272]
@@ -218,9 +220,21 @@ maven invoke javac with -g by default:
  - https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug
  - https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debuglevel
  
+## Exception stacktraces
 
-javap on classfile, LineNumber Table
-what is the overhead in size, table to compare, %
+We have line numbers inside the classfile, now when and where those line are resolved?
+
+For exception, stacktraces are in fact collected when they are instantiated through the call to `fillInStackTrace()`
+https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L271
+
+And this is calling the JVM internally to 
+https://github.com/openjdk/jdk/blob/master/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538
+
+and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class.
+
+Then when you call `printStackTrace()` on an exception it will take this backtrace to fill out StackTRaceElement array:
+https://github.com/openjdk/jdk/blob/1581e3faa06358f192799b3a89718028c7f6a24b/src/hotspot/share/classfile/javaClasses.cpp#L2608-L2643
+
 
 ## C2
 debug info recorder:
