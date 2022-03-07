@@ -225,16 +225,19 @@ maven invoke javac with -g by default:
 We have line numbers inside the classfile, now when and where those line are resolved?
 
 For exception, stacktraces are in fact collected when they are instantiated through the call to `fillInStackTrace()`
-https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L271
+https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/java.base/share/classes/java/lang/Throwable.java#L271
 
 And this is calling the JVM internally to 
-https://github.com/openjdk/jdk/blob/master/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538
+https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538
 
-and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class.
+and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class a list of pointer (or handle) to method metadata from the interpreter state and the BCI (ByteCode Index).
 
-Then when you call `printStackTrace()` on an exception it will take this backtrace to fill out StackTRaceElement array:
+Then, either if you call `getStackTrace()` or `printStackTrace()` on an exception, it will take this backtrace to fill out StackTraceElement array:
 https://github.com/openjdk/jdk/blob/1581e3faa06358f192799b3a89718028c7f6a24b/src/hotspot/share/classfile/javaClasses.cpp#L2608-L2643
+and try to resolve symbol names and line numbers with the help of [`Backtrace::get_source_file_name`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.inline.hpp#L323-L334) and [`Backtrace::get_line_number`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.inline.hpp#L309-L321)
+that will get information from the debug information stored in the classfile (SourceFile & LineNumber table).
 
+For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. but for JITed code?
 
 ## C2
 debug info recorder:
