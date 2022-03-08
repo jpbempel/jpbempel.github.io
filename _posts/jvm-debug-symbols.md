@@ -237,7 +237,11 @@ that will get information from the debug information stored in the classfile (So
 
 For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. but for JITed code?
 
-## C2
+## C1/C2
+When compiling a method, a debug info recorder is started and at each safepoint inserted, information about current execution context is recorded into the stream. used for GC, stacktraces (inclufind exception), and deoptimization.
+see comment:
+https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63
+
 debug info recorder:
 https://github.com/openjdk/jdk/blob/master/src/hotspot/share/code/debugInfoRec.hpp
 debug info at safepoint
