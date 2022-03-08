@@ -238,7 +238,22 @@ that will get information from the debug information stored in the classfile (So
 For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. but for JITed code?
 
 ## C1/C2
-When compiling a method, a debug info recorder is started and at each safepoint inserted, information about current execution context is recorded into the stream. used for GC, stacktraces (inclufind exception), and deoptimization.
+When compiling a method, a [debug infoformation recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started and at each method call, a safepoint is inserted. 
+
+A safepoint is point in code where it is safe for application threads to be stopped for doing some VM operations like GC that needs to inspect thread stacks.
+When thread execution is stopped at those safepoints, JVM state is perfectly known: local variables & registers may contain reference to object that needs to be tracked.
+
+Those safepoints are emitted by the JIT compiler at strategic places that balance the execution speed and reactivity to stop threads. It's also a trade-off for debug information recording as we cannot keep track of all machine instructions and their mapping equivalent to BCI/source line numbers.
+
+During compilation of a method, bytecode is converted to nodes inside a graph, and each operation is a specialized node. For calling a method we have a `CallNode` and those `CallNode`s are most of the time associated with a Safepoint. When emitting machine code for the node, JIT compiler knows that we are at a safepoint and trigger the recording of the current execution context through the debug information recorder.
+
+TODO: What information is recorded, 3 phases: add_safepoint, describe scope, end_safepoint
+
+not all the callnode are at safepoint, excpetions: Lock, LeafNode (call to native), ...
+
+
+
+It is used for GC, stacktraces (including exception), and deoptimization.
 see comment:
 https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63
 
@@ -247,6 +262,8 @@ https://github.com/openjdk/jdk/blob/master/src/hotspot/share/code/debugInfoRec.h
 debug info at safepoint
 issues with DebugNonSafepoint flag regarding stacktrace accuracy
 
+
+### DebugNonSafepoint
 
 ## References
  - https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html
