@@ -232,8 +232,8 @@ and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/master/s
 
 Then, either if you call `getStackTrace()` or `printStackTrace()` on an exception, it will take this backtrace to fill out StackTraceElement array:
 [`java_lang_Throwable::get_stack_trace_elements`](https://github.com/openjdk/jdk/blob/1581e3faa06358f192799b3a89718028c7f6a24b/src/hotspot/share/classfile/javaClasses.cpp#L2608-L2643)
-and try to resolve symbol names and line numbers with the help of [`Backtrace::get_source_file_name`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.inline.hpp#L323-L334) and [`Backtrace::get_line_number`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.inline.hpp#L309-L321)
-that will get information from the debug information stored in the classfile (SourceFile & LineNumber table).
+and try to resolve symbol names and line numbers with the help of [`ConstantPool::source_file_name`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src%2Fhotspot%2Fshare%2Foops%2FconstantPool.hpp#L195-L198) to fetch the source file name from the constant pool of the class and [`Method::line_number_from_bci`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/oops/method.cpp#L940-L962)
+to use the LineNumber Table to translate BCI to line number.
 
 For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. but for JITed code?
 
