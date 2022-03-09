@@ -247,7 +247,11 @@ Those safepoints are emitted by the JIT compiler at strategic places that balanc
 
 During compilation of a method, bytecode is converted to nodes inside a graph, and each operation is a specialized node. For calling a method we have a `CallNode` and those `CallNode`s are most of the time associated with a Safepoint. When emitting machine code for the node, JIT compiler knows that we are at a safepoint and trigger the recording of the current execution context through the debug information recorder.
 
-TODO: What information is recorded, 3 phases: add_safepoint, describe scope, end_safepoint
+TODO: What information is recorded, 
+ - OopMap
+ - scope (JVM state, locals stack expression (stack machine parlance))
+
+3 phases: add_safepoint, describe scope, end_safepoint
 
 not all the callnode are at safepoint, excpetions: Lock, LeafNode (call to native), ...
 
