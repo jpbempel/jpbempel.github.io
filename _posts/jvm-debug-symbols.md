@@ -240,6 +240,16 @@ For the interpreter it seems obvious that there is a 1:1 mapping between the cur
 ## C1/C2
 When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started and at each method call, a safepoint is inserted. 
 
+See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63) self-explains:
+```
+//** The DebugInformationRecorder collects debugging information
+//   for a compiled method.
+//   Debugging information is used for:
+//   - garbage collecting compiled frames
+//   - stack tracing across compiled frames
+//   - deoptimizating compiled frames
+```
+
 A safepoint is point in code where it is safe for application threads to be stopped for doing some VM operations like GC that needs to inspect thread stacks.
 When thread execution is stopped at those safepoints, JVM state is perfectly known: local variables & registers may contain reference to object that needs to be tracked.
 
@@ -251,19 +261,19 @@ Information recorded are:
  - OopMap: Set of object references that are reachable from the current method (registers or stack)
  - scope (JVM state, locals, stack expressions (stack machine parlance))
 
+JVMState is a list of interpreter state + GC roots for the current active call and all inlined methods. This is the way debug symbols are also mapped for inlined methods.
+
 Those information are recorded in 3 phases:
  1. [add_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1026)
- 2. [describe_scope](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1140-L1155) for every scope 
+ 2. [describe_scope](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1140-L1155) for every scope. there is one scope per JVMState, so one for current compiling method and one per inlined method in it.
  3. [end_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1159)
 
 
-not all the callnode are at safepoint, excpetions: Lock, LeafNode (call to native), ...
+not all the callnode are at safepoint, exceptions: 
+ - [LockNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L1159) (synchronized block), 
+ - [CallLeafNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L821) (call to native)
+ - [AllocateNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L952)
 
-
-
-It is used for GC, stacktraces (including exception), and deoptimization.
-see comment:
-https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63
 
 debug info recorder:
 https://github.com/openjdk/jdk/blob/master/src/hotspot/share/code/debugInfoRec.hpp
