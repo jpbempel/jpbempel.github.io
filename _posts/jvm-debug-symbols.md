@@ -210,13 +210,13 @@ What is the impact on the classfile size:
 |[CommandLine.java](https://github.com/remkop/picocli/blob/main/src/main/java/picocli/CommandLine.java)|64,273B|80,074B|+24%|
 
 
-### gradle defaults:
-gradle invoke javac with -g by default:
+### Gradle defaults:
+Gradle invokes javac with -g by default:
 - https://docs.gradle.org/current/javadoc/org/gradle/api/tasks/compile/CompileOptions.html?_ga=2.42477413.1942252367.1645032818-155398221.1645032818#isDebug--
 - https://github.com/gradle/gradle/blob/37911bb86d02d26a5d2ce3f23e01c0d767e3bb91/subprojects/language-java/src/main/java/org/gradle/api/internal/tasks/compile/JavaCompilerArgumentsBuilder.java#L195
 
 ### maven defaults:
-maven invoke javac with -g by default:
+Maven invokes javac with -g by default:
  - https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug
  - https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debuglevel
  
@@ -228,7 +228,7 @@ For exception, stacktraces are in fact collected when they are instantiated thro
 
 And this is calling the JVM internally to [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538)
 
-and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class a list of pointer (or handle) to method metadata from the interpreter state and the BCI (ByteCode Index).
+and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/12dca36c73583d0ed2e1f684b056100dc1f2ef55/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class a list of pointer (or handle) to method metadata from the interpreter state and the BCI (ByteCode Index).
 
 Then, either if you call `getStackTrace()` or `printStackTrace()` on an exception, it will take this backtrace to fill out StackTraceElement array:
 [`java_lang_Throwable::get_stack_trace_elements`](https://github.com/openjdk/jdk/blob/1581e3faa06358f192799b3a89718028c7f6a24b/src/hotspot/share/classfile/javaClasses.cpp#L2608-L2643)
@@ -237,7 +237,7 @@ to use the LineNumber Table to translate BCI to line number.
 
 For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. but for JITed code?
 
-## C1/C2
+## C2 JIT compiler
 When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started and at each method call, a safepoint is inserted. 
 
 See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63) self-explains:
@@ -265,15 +265,18 @@ JVMState is a list of interpreter state + GC roots for the current active call a
 
 Those information are recorded in 3 phases:
  1. [add_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1026)
- 2. [describe_scope](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1140-L1155) for every scope. there is one scope per JVMState, so one for current compiling method and one per inlined method in it.
+ 2. [describe_scope](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1140-L1155) for every scope. there is one scope per JVMState, so one for current compiling method and one per inlined method in it. Each scope will record the current PC (Program Counter) and the BCI associated.
  3. [end_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1159)
-
 
 not all the callnode are at safepoint, exceptions: 
  - [LockNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L1159) (synchronized block), 
  - [CallLeafNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L821) (call to native)
  - [AllocateNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L952)
 
+Now back to our exception, how stacktraces is resolved from JITed code? In the [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538) method, if a compiled (native) method is associated to the current frame that we are examining, JVM is opening the debug recording stream that was written during JIT compilation, and read the method metadta and the BCI. Those information will then be used like the interpreted version.
+
+
+Comment on safepoint/calls? bias? profiling?
 
 
 ### DebugNonSafepoint
