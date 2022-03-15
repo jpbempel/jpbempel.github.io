@@ -282,6 +282,8 @@ Comment on safepoint/calls? bias? profiling?
 ### DebugNonSafepoint
 There is an interesting flag that modifiy slightly the behavior described above: `-XX:+DebugNonSafepoint`. This flag is recommended to collect more information when profile with some tools like...
 
+This flag is taken into account when the debug info recorder is created.
+
 debug info at safepoint
 issues with DebugNonSafepoint flag regarding stacktrace accuracy
 
