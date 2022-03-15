@@ -275,13 +275,11 @@ not all the callnode are at safepoint, exceptions:
  - [AllocateNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L952)
 
 
-debug info recorder:
-https://github.com/openjdk/jdk/blob/master/src/hotspot/share/code/debugInfoRec.hpp
+
+### DebugNonSafepoint
 debug info at safepoint
 issues with DebugNonSafepoint flag regarding stacktrace accuracy
 
-
-### DebugNonSafepoint
 
 ## References
  - https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html
