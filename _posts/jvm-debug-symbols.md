@@ -212,8 +212,8 @@ Gradle invokes javac with -g by default:
 
 ### maven defaults:
 Maven invokes javac with -g by default:
- - [compiler:compile <debug> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug)
- - [compiler:compile <debuglevel> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debuglevel)
+ - [compiler:compile \<debug> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug)
+ - [compiler:compile \<debuglevel> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debuglevel)
  
 ## Exception stacktraces
 
