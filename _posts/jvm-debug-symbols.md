@@ -275,18 +275,13 @@ not all the callnode are at safepoint, exceptions:
 
 Now back to our exception, how stacktraces is resolved from JITed code? In the [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538) method, if a compiled (native) method is associated to the current frame that we are examining, JVM is opening the debug recording stream that was written during JIT compilation, and read the method metadta and the BCI. Those information will then be used like the interpreted version.
 
-
-Comment on safepoint/calls? bias? profiling?
+The above described mechanism give precised and accurate stacktraces for exception because each frame in the stack is a call and it's done at a safepoint. That way we have the exact mapping from PC to BCI and finally to source line number.
 
 
 ### DebugNonSafepoint
-There is an interesting flag that modifiy slightly the behavior described above: `-XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoint`. This flag is recommended to collect more information when profile with some tools like...
+There is an interesting flag that modifiy slightly the behavior described above: `-XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints`.  This flag activates the recording of more debug information about PC even if it's not at safepoint. It means we can have a more precise location for stacktraces. It's not affecting exceptions, but profiling tools based on `AsyncGetCallTrace` like [JFR/JMC](https://github.com/openjdk/jmc), [AsyncProfiler](https://github.com/jvm-profiling-tools/async-profiler) or [HonestProfiler](https://github.com/jvm-profiling-tools/honest-profiler).
 
-This flag is taken into account when the debug info recorder is created.
-
-debug info at safepoint
-issues with DebugNonSafepoint flag regarding stacktrace accuracy
-
+This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
 
 ## References
  - https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html
