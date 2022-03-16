@@ -1,11 +1,6 @@
 # JVM debug symbols
 
-Recently I stumble upon this tweet:
-
-https://twitter.com/ne_skazu/status/1491158726258364416
-
-
-When you are used to work on the JVM it's sure that's very convenient and magic.
+When working on the JVM, almost all your stacktraces have source file name and line numbers without resorting additional files (debug symbols).
 Also, you are familiar with stacktraces like for example the ones that are associated with exceptions:
 
 ```
@@ -212,13 +207,13 @@ What is the impact on the classfile size:
 
 ### Gradle defaults:
 Gradle invokes javac with -g by default:
-- https://docs.gradle.org/current/javadoc/org/gradle/api/tasks/compile/CompileOptions.html?_ga=2.42477413.1942252367.1645032818-155398221.1645032818#isDebug--
-- https://github.com/gradle/gradle/blob/37911bb86d02d26a5d2ce3f23e01c0d767e3bb91/subprojects/language-java/src/main/java/org/gradle/api/internal/tasks/compile/JavaCompilerArgumentsBuilder.java#L195
+- [CompileOptions::isDebug](https://docs.gradle.org/current/javadoc/org/gradle/api/tasks/compile/CompileOptions.html?_ga=2.42477413.1942252367.1645032818-155398221.1645032818#isDebug--)
+- [JavaCompilerArgumentsBuilder::addMainOptions](https://github.com/gradle/gradle/blob/37911bb86d02d26a5d2ce3f23e01c0d767e3bb91/subprojects/language-java/src/main/java/org/gradle/api/internal/tasks/compile/JavaCompilerArgumentsBuilder.java#L195)
 
 ### maven defaults:
 Maven invokes javac with -g by default:
- - https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug
- - https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debuglevel
+ - [compiler:compile <debug> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug)
+ - [compiler:compile <debuglevel> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debuglevel)
  
 ## Exception stacktraces
 
