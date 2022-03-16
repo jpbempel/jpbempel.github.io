@@ -1,7 +1,7 @@
 # JVM debug symbols
 
-When working on the JVM, almost all your stacktraces have source file name and line numbers without resorting additional files (debug symbols).
-Also, you are familiar with stacktraces like for example the ones that are associated with exceptions:
+When working on the JVM, almost all your stacktraces have source file name and line numbers without resorting to any additional files (debug symbols).
+Also, you are familiar with stacktraces like the ones that are associated with exceptions:
 
 ```
 java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
@@ -20,11 +20,11 @@ java.lang.RuntimeException: Expected: controller used to showcase what happens w
         at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) [tomcat-embed-core-9.0.45.jar!/:na]
         at java.lang.Thread.run(Thread.java:748) [na:1.8.0_272]
 ```
-But how the JVM managed to keep and gather those line information, moreover with JITed code?
+But how does the JVM manage to keep track of these line information, especially with JITed code?
 
 ## javac
 
-First steps are in java compiler `javac`. According to the inline documentation, you can specify `-g` option to manage the debug information that will be included into the compiled classfile:
+The first step is with java compiler `javac`. From inline documentation, you can pass `-g` option to include the debug information in the compiled classfile:
 
 ```
 javac --help
@@ -36,11 +36,11 @@ javac --help
 ```
 
 ### javac defaults:
-By default, javac is generating line number and source file but no local variable information.
+By default, javac generates line number and source file but no local variable information.
 see https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html
 > By default, only line number and source file information is generated.
 
-let's take a simple example:
+Let's take a simple example:
 
 ```java
 public class LineNumbers {
@@ -65,7 +65,7 @@ Exception in thread "main" java.lang.RuntimeException: boo
 	at LineNumbers.main(Unknown Source)
 ```
 
-we can inspect with `javap` the classfile compiled with `-g:none`
+We can inspect the classfile compiled with `-g:none` with `javap`
 ```
 javap -v LineNumbers.class
 Classfile LineNumbers.class
@@ -120,7 +120,7 @@ Constant pool:
 }
 ```
 
-now with  `-g` option (full debug info):
+Now with  `-g` option (full debug info):
 ```
 Classfile /Users/jean-philippe.bempel/projects/tmp/LineNumbers.class
   Last modified Mar 2, 2022; size 460 bytes
@@ -217,7 +217,7 @@ Maven invokes javac with -g by default:
  
 ## Exception stacktraces
 
-We have line numbers inside the classfile, now when and where those line are resolved?
+We have line numbers inside the classfile, but when and where are these line resolved?
 
 For exception, stacktraces are in fact collected when they are instantiated through the call to [`fillInStackTrace()`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/java.base/share/classes/java/lang/Throwable.java#L271)
 
@@ -225,17 +225,17 @@ And this is calling the JVM internally to [`java_lang_Throwable::fill_in_stack_t
 
 and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/12dca36c73583d0ed2e1f684b056100dc1f2ef55/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class a list of pointer (or handle) to method metadata from the interpreter state and the BCI (ByteCode Index).
 
-Then, either if you call `getStackTrace()` or `printStackTrace()` on an exception, it will take this backtrace to fill out StackTraceElement array:
+Then, only when you call `getStackTrace()` or `printStackTrace()` on an exception, it will take this backtrace to fill out StackTraceElement array:
 [`java_lang_Throwable::get_stack_trace_elements`](https://github.com/openjdk/jdk/blob/1581e3faa06358f192799b3a89718028c7f6a24b/src/hotspot/share/classfile/javaClasses.cpp#L2608-L2643)
 and try to resolve symbol names and line numbers with the help of [`ConstantPool::source_file_name`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src%2Fhotspot%2Fshare%2Foops%2FconstantPool.hpp#L195-L198) to fetch the source file name from the constant pool of the class and [`Method::line_number_from_bci`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/oops/method.cpp#L940-L962)
 to use the LineNumber Table to translate BCI to line number.
 
-For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. but for JITed code?
+For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. But what about JITed code?
 
 ## C2 JIT compiler
-When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started and at each method call, a safepoint is inserted. 
+When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started, and, at each method call, a safepoint is inserted. 
 
-See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63) self-explains:
+See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63) is describing the purpose:
 ```
 //** The DebugInformationRecorder collects debugging information
 //   for a compiled method.
@@ -245,12 +245,12 @@ See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33
 //   - deoptimizating compiled frames
 ```
 
-A safepoint is point in code where it is safe for application threads to be stopped for doing some VM operations like GC that needs to inspect thread stacks.
-When thread execution is stopped at those safepoints, JVM state is perfectly known: local variables & registers may contain reference to object that needs to be tracked.
+A safepoint is a point in the code where it is safe for an application's threads to be suspended to do some VM operations like GC that needs to inspect the thread's stack. For example, it is used for Garbage Collection to scan the thread stack for object root references.
+When a thread is suspended at a safepoint, the thread's state is perfectly known. The local variables and registers which may contain reference to object have been saved in a local structure used by the VM to track such objects.
 
-Those safepoints are emitted by the JIT compiler at strategic places that balance the execution speed and reactivity to stop threads. It's also a trade-off for debug information recording as we cannot keep track of all machine instructions and their mapping equivalent to BCI/source line numbers.
+Those safepoints are emitted by the JIT compiler at strategic places that balance the execution speed and reactivity to suspend the thread. It's also a trade-off for debug information recording since we cannot keep track the mapping between all machine instructions and their equivalent to BCI/source line numbers.
 
-During compilation of a method, bytecode is converted to nodes inside a graph, and each operation is a specialized node. For calling a method we have a `CallNode` and those `CallNode`s are most of the time associated with a Safepoint. When emitting machine code for the node, JIT compiler knows that we are at a safepoint and trigger the recording of the current execution context through the debug information recorder.
+During compilation of a method, the bytecode is converted to a graph of specialized nodes (a node is, for example, "load argument 0" or "call method X"). For calling a method we have a `CallNode` node and those `CallNode`s are most of the time associated with a Safepoint. When emitting machine code for the node, the JIT compiler knows about the safepoint and triggers the recording of the current execution context through the debug information recorder.
 
 Information recorded are:
  - OopMap: Set of object references that are reachable from the current method (registers or stack)
