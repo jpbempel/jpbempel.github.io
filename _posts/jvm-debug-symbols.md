@@ -1,7 +1,7 @@
-# JVM debug symbols
+# Inside JVM debug symbols
 
-When working on the JVM, almost all your stacktraces have source file name and line numbers without resorting to any additional files (debug symbols).
-Also, you are familiar with stacktraces like the ones that are associated with exceptions:
+When working on the JVM, almost all stacktraces you see provide source file name and line numbers.
+For example, here is stacktrace associated with an exception:
 
 ```
 java.lang.RuntimeException: Expected: controller used to showcase what happens when an exception is thrown
@@ -20,11 +20,11 @@ java.lang.RuntimeException: Expected: controller used to showcase what happens w
         at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) [tomcat-embed-core-9.0.45.jar!/:na]
         at java.lang.Thread.run(Thread.java:748) [na:1.8.0_272]
 ```
-But how does the JVM manage to keep track of these line information, especially with JITed code?
+The rest of this post details how does the JVM manage to keep track of these line information without resorting to any additional files (debug symbols), and especially with JITed code.
 
 ## javac
 
-The first step is with java compiler `javac`. From inline documentation, you can pass `-g` option to include the debug information in the compiled classfile:
+The first step is with java compiler `javac`. You can use `-g` option to include/exclude the debug information in the compiled classfile:
 
 ```
 javac --help
@@ -36,9 +36,7 @@ javac --help
 ```
 
 ### javac defaults:
-By default, javac generates line number and source file but no local variable information.
-see https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html
-> By default, only line number and source file information is generated.
+[By default](https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html), javac generates line number and source file but no local variable information.
 
 Let's take a simple example:
 
@@ -56,7 +54,7 @@ public class LineNumbers {
 Exception in thread "main" java.lang.RuntimeException: boo
 	at LineNumbers.main(LineNumbers.java:3)
 ```
-here we have line number information from where the exception was thrown.
+As expected with the defaults, line number information from where the exception was thrown is displayed. If you exclude the debug information, both file and line number are unknown:
 
 `javac -g:none LineNumbers.java && java LineNumbers`
 
@@ -120,7 +118,7 @@ Constant pool:
 }
 ```
 
-Now with  `-g` option (full debug info):
+Let's do the same for the classfile generated with  `-g` option (full debug info):
 ```
 Classfile /Users/jean-philippe.bempel/projects/tmp/LineNumbers.class
   Last modified Mar 2, 2022; size 460 bytes
@@ -194,7 +192,7 @@ Constant pool:
 SourceFile: "LineNumbers.java"
 ```
 
-We now know that the source filename is `LineNumbers.java`, and for each method we have `LineNumberTable` and `LocalVariableTable`
+We now know that the source filename is `LineNumbers.java`, and for each method we have `LineNumberTable` and `LocalVariableTable` mappings
 
 ### sizes
 What is the impact on the classfile size:
@@ -219,15 +217,17 @@ Maven invokes javac with -g by default:
 
 We have line numbers inside the classfile, but when and where are these line resolved?
 
-For exception, stacktraces are in fact collected when they are instantiated through the call to [`fillInStackTrace()`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/java.base/share/classes/java/lang/Throwable.java#L271)
+Stacktraces are in fact collected when exceptions are instantiated through the call to [`fillInStackTrace()`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/java.base/share/classes/java/lang/Throwable.java#L271)
 
-And this is calling the JVM internally to [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538)
+This is calling the JVM via [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538)
 
-and store it into the [`backtrace`](https://github.com/openjdk/jdk/blob/12dca36c73583d0ed2e1f684b056100dc1f2ef55/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class a list of pointer (or handle) to method metadata from the interpreter state and the BCI (ByteCode Index).
+and stores it into the [`backtrace`](https://github.com/openjdk/jdk/blob/12dca36c73583d0ed2e1f684b056100dc1f2ef55/src/java.base/share/classes/java/lang/Throwable.java#L122) field in `Throwable` class as a list of pointers (or handles) to method metadata from the interpreter state and the BCI (ByteCode Index).
 
 Then, only when you call `getStackTrace()` or `printStackTrace()` on an exception, it will take this backtrace to fill out StackTraceElement array:
 [`java_lang_Throwable::get_stack_trace_elements`](https://github.com/openjdk/jdk/blob/1581e3faa06358f192799b3a89718028c7f6a24b/src/hotspot/share/classfile/javaClasses.cpp#L2608-L2643)
-and try to resolve symbol names and line numbers with the help of [`ConstantPool::source_file_name`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src%2Fhotspot%2Fshare%2Foops%2FconstantPool.hpp#L195-L198) to fetch the source file name from the constant pool of the class and [`Method::line_number_from_bci`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/oops/method.cpp#L940-L962)
+tries to resolve symbol names and line numbers with the help of: 
+- [`ConstantPool::source_file_name`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src%2Fhotspot%2Fshare%2Foops%2FconstantPool.hpp#L195-L198) to fetch the source file name from the constant pool of the class
+-  [`Method::line_number_from_bci`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/oops/method.cpp#L940-L962)
 to use the LineNumber Table to translate BCI to line number.
 
 For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. But what about JITed code?
@@ -235,7 +235,7 @@ For the interpreter it seems obvious that there is a 1:1 mapping between the cur
 ## C2 JIT compiler
 When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started, and, at each method call, a safepoint is inserted. 
 
-See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63) is describing the purpose:
+See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63) describing its purpose:
 ```
 //** The DebugInformationRecorder collects debugging information
 //   for a compiled method.
@@ -245,14 +245,14 @@ See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33
 //   - deoptimizating compiled frames
 ```
 
-A safepoint is a point in the code where it is safe for an application's threads to be suspended to do some VM operations like GC that needs to inspect the thread's stack. For example, it is used for Garbage Collection to scan the thread stack for object root references.
+A safepoint is a point in the code where it is safe for an application's threads to be suspended to do some VM operations. For example, it is used for Garbage Collection to scan the thread stack for object root references.
 When a thread is suspended at a safepoint, the thread's state is perfectly known. The local variables and registers which may contain reference to object have been saved in a local structure used by the VM to track such objects.
 
-Those safepoints are emitted by the JIT compiler at strategic places that balance the execution speed and reactivity to suspend the thread. It's also a trade-off for debug information recording since we cannot keep track the mapping between all machine instructions and their equivalent to BCI/source line numbers.
+Those safepoints are emitted by the JIT compiler at strategic places to balance the execution speed and reactivity to suspend the thread. It's also a trade-off for debug information recording since we cannot keep track the mapping between all machine instructions and their equivalent to BCI/source line numbers.
 
 During compilation of a method, the bytecode is converted to a graph of specialized nodes (a node is, for example, "load argument 0" or "call method X"). For calling a method we have a `CallNode` node and those `CallNode`s are most of the time associated with a Safepoint. When emitting machine code for the node, the JIT compiler knows about the safepoint and triggers the recording of the current execution context through the debug information recorder.
 
-Information recorded are:
+Recorded information are:
  - OopMap: Set of object references that are reachable from the current method (registers or stack)
  - scope (JVM state, locals, stack expressions (stack machine parlance))
 
@@ -260,17 +260,17 @@ JVMState is a list of interpreter state + GC roots for the current active call a
 
 Those information are recorded in 3 phases:
  1. [add_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1026)
- 2. [describe_scope](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1140-L1155) for every scope. there is one scope per JVMState, so one for current compiling method and one per inlined method in it. Each scope will record the current PC (Program Counter) and the BCI associated.
+ 2. [describe_scope](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1140-L1155) for every scope. There is one scope per JVMState, so one for current compiling method and one per inlined method in it. Each scope will record the current PC (Program Counter) and the BCI associated.
  3. [end_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1159)
 
-not all the callnode are at safepoint, exceptions: 
+Not all callnodes are at safepoint, exceptions: 
  - [LockNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L1159) (synchronized block), 
  - [CallLeafNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L821) (call to native)
  - [AllocateNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L952)
 
-Now back to our exception, how stacktraces is resolved from JITed code? In the [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538) method, if a compiled (native) method is associated to the current frame that we are examining, JVM is opening the debug recording stream that was written during JIT compilation, and read the method metadta and the BCI. Those information will then be used like the interpreted version.
+Now back to our exception: how stacktraces are resolved from JITed code? In the [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538) method, if a compiled (native) method is associated to the frame that we are examining, JVM is opening the debug recording stream that was written during JIT compilation, and reads the method metadata and the BCI. These information will then be used like for the interpreted version.
 
-The above described mechanism give precised and accurate stacktraces for exception because each frame in the stack is a call and it's done at a safepoint. That way we have the exact mapping from PC to BCI and finally to source line number.
+The above-described mechanism gives precised and accurate stacktraces for exceptions because each frame in the stack is a call and it's done at a safepoint. That way we have the exact mapping from PC to BCI and finally to source line number.
 
 ## References
  - https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html
