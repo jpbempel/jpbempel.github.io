@@ -191,6 +191,9 @@ Constant pool:
 }
 SourceFile: "LineNumbers.java"
 ```
+// TODO : explain BCI
+
+![LineNumberTable](/assets/2022/03/LineNumberTable.png)
 
 We now know that the source filename is `LineNumbers.java`, and for each method we have `LineNumberTable` and `LocalVariableTable` mappings
 
@@ -233,6 +236,9 @@ to use the LineNumber Table to translate BCI to line number.
 For the interpreter it seems obvious that there is a 1:1 mapping between the current state of execution of the bytecode and the source file/line number. But what about JITed code?
 
 ## C2 JIT compiler
+
+// TODO mapping PC => BCI
+
 When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started, and, at each method call, a safepoint is inserted. 
 
 See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/code/debugInfoRec.hpp#L40-L63) describing its purpose:
