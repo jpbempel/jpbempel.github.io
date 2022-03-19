@@ -282,7 +282,7 @@ and JITed code:
                                                 ;   {runtime_call UncommonTrapBlob}
 ```
 
-From the JITed code, at the current address of execution (or Program Counter), we need to have the mapping from it to the corresponind BCI, and then from the BCI use the LineNumberTable to get the source line number. This PC/BCI mapping is generated and recorded byt the JIT itself.
+From the JITed code, at the current address of execution (or Program Counter), we need to have the mapping from it to the corresponing BCI. Then from the BCI, we use the `LineNumberTable` to get the source line number. This PC/BCI mapping is generated and recorded byt the JIT itself.
 
 When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started, and, at each method call, a safepoint is inserted. 
 
@@ -297,27 +297,21 @@ See the [comment](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33
 ```
 
 A safepoint is a point in the code where it is safe for an application's threads to be suspended to do some VM operations. For example, it is used for Garbage Collection to scan the thread stack for object root references.
-When a thread is suspended at a safepoint, the thread's state is perfectly known. The local variables and registers which may contain reference to object have been saved in a local structure used by the VM to track such objects.
+When a thread is suspended at a safepoint, the thread's state is perfectly known. The local variables and registers which may contain reference to object have been saved in a local structure used by the VM to track such objects. The JIT use also those properties of the safepoint to record at the same time the debug information.
 
-Those safepoints are emitted by the JIT compiler at strategic places to balance the execution speed and reactivity to suspend the thread. It's also a trade-off for debug information recording since we cannot keep track the mapping between all machine instructions and their equivalent to BCI/source line numbers.
-
-During compilation of a method, the bytecode is converted to a graph of specialized nodes (a node is, for example, "load argument 0" or "call method X"). For calling a method we have a `CallNode` node and those `CallNode`s are most of the time associated with a Safepoint. When emitting machine code for the node, the JIT compiler knows about the safepoint and triggers the recording of the current execution context through the debug information recorder.
+Those safepoints are emitted by the JIT compiler at strategic places to balance the execution speed and reactivity to suspend the thread. It's also a trade-off for debug information recording as usually, it may have more machine instructions than bytecode instructions and we cannot store all the mappings from PC to BCI. So we keep only the mapping at the safepoint.
 
 Recorded information are:
  - OopMap: Set of object references that are reachable from the current method (registers or stack)
  - scope (JVM state, locals, stack expressions (stack machine parlance))
+ - current BCI
 
-JVMState is a list of interpreter state + GC roots for the current active call and all inlined methods. This is the way debug symbols are also mapped for inlined methods.
+JVM state is a list of interpreter state + GC roots for the current active call and all inlined methods. This is the way debug symbols are also mapped for inlined methods.
 
 Those information are recorded in 3 phases:
  1. [add_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1026)
  2. [describe_scope](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1140-L1155) for every scope. There is one scope per JVMState, so one for current compiling method and one per inlined method in it. Each scope will record the current PC (Program Counter) and the BCI associated.
  3. [end_safepoint](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/output.cpp#L1159)
-
-Not all callnodes are at safepoint, exceptions: 
- - [LockNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L1159) (synchronized block), 
- - [CallLeafNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L821) (call to native)
- - [AllocateNode](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/callnode.hpp#L952)
 
 Now back to our exception: how stacktraces are resolved from JITed code? In the [`java_lang_Throwable::fill_in_stack_trace`](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/classfile/javaClasses.cpp#L2403-L2538) method, if a compiled (native) method is associated to the frame that we are examining, JVM is opening the debug recording stream that was written during JIT compilation, and reads the method metadata and the BCI. These information will then be used like for the interpreted version.
 
