@@ -208,7 +208,11 @@ The `LineNumberTable` is a mapping between Line number inside the source file an
 In the example above, At line 3 corresponds to the BCI 0 of the method, so the first bytecode instruction
 
 ### sizes
-What is the impact on the classfile size:
+What is the impact on the classfile size?
+
+I took 2 different files: 
+ - `LineNumbers.java`, the file we created above, quite small
+ - `CommandLine.java` is the single source file from [Picocli](https://picocli.info/) project
 
 |SourceFile|-g:none|-g|%|
 |-|-|-|-|
@@ -247,7 +251,38 @@ For the interpreter it seems obvious that there is a 1:1 mapping between the cur
 
 ## C2 JIT compiler
 
-// TODO mapping PC => BCI
+We saw previously that, for the interpreter, we have a mapping inside the classfile between source line number and BCI. With JITed code we now need a mapping between PC (Program Counter) or IP (Instruction Pointer) and BCI.
+
+To reuse our example from above, we have java source line:
+```
+L3: throw new RuntimeException("boo");
+```
+
+bytecode in classfile:
+```
+ 0: new           #2                  // class java/lang/RuntimeException
+ 3: dup
+ 4: ldc           #3                  // String boo
+ 6: invokespecial #4                  // Method java/lang/RuntimeException."<init>":(Ljava/lang/String;)V
+ 9: athrow
+```
+
+and JITed code:
+```
+  0x000000011a3d2120: mov    %eax,-0x14000(%rsp)
+  0x000000011a3d2127: push   %rbp
+  0x000000011a3d2128: sub    $0x10,%rsp         ;*synchronization entry
+                                                ; - LineNumbers::main@-1 (line 3)
+
+  0x000000011a3d212c: mov    $0x2,%esi
+  0x000000011a3d2131: xchg   %ax,%ax
+  0x000000011a3d2133: call   0x00000001128b2e00  ; ImmutableOopMap{}
+                                                ;*new {reexecute=0 rethrow=0 return_oop=0}
+                                                ; - LineNumbers::main@0 (line 3)
+                                                ;   {runtime_call UncommonTrapBlob}
+```
+
+From the JITed code, at the current address of execution (or Program Counter), we need to have the mapping from it to the corresponind BCI, and then from the BCI use the LineNumberTable to get the source line number. This PC/BCI mapping is generated and recorded byt the JIT itself.
 
 When compiling a method, a [debug information recorder](https://github.com/openjdk/jdk/blob/5d5bf16b0af419781fd336fe33d8eab5adf8be5a/src/hotspot/share/opto/compile.cpp#L968) is started, and, at each method call, a safepoint is inserted. 
 
