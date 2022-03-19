@@ -8,15 +8,7 @@ java.lang.RuntimeException: Expected: controller used to showcase what happens w
         at org.springframework.samples.petclinic.system.CrashController.triggerException(CrashController.java:36) ~[classes!/:2.2.0.BUILD-SNAPSHOT]
         at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.8.0_272]
         at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:1.8.0_272]
-        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:1.8.0_272]
-        at java.lang.reflect.Method.invoke(Method.java:498) ~[na:1.8.0_272]
-        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:197) ~[spring-web-5.3.6.jar!/:5.3.6]
-        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:141) ~[spring-web-5.3.6.jar!/:5.3.6]
-        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:106) ~[spring-webmvc-5.3.6.jar!/:5.3.6]
  // ... skipped for brevity ...
-        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49) [tomcat-embed-core-9.0.45.jar!/:na]
-        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) [na:1.8.0_272]
-        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) [na:1.8.0_272]
         at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) [tomcat-embed-core-9.0.45.jar!/:na]
         at java.lang.Thread.run(Thread.java:748) [na:1.8.0_272]
 ```
@@ -191,11 +183,29 @@ Constant pool:
 }
 SourceFile: "LineNumbers.java"
 ```
-// TODO : explain BCI
 
+The differences between the 2 are 
+- a `LineNumberTable` section added for each method like:
+```
+LineNumberTable:
+  line 3: 0
+```
+- a `LocalVariableTable` section added for each method like:
+```
+LocalVariableTable:
+Start  Length  Slot  Name   Signature
+    0      10     0  args   [Ljava/lang/String;
+```
+- an attribute `SourceFile` indicating the name of the source file compiled from:
+```
+SourceFile: "LineNumbers.java"
+```
+
+Indices used in those tables are called ByteCode Index (BCI). BCI are offsets from the beginning of the method where a bytecode instruction starts.
+
+The `LineNumberTable` is a mapping between Line number inside the source file and BCIs.
 ![LineNumberTable](/assets/2022/03/LineNumberTable.png)
-
-We now know that the source filename is `LineNumbers.java`, and for each method we have `LineNumberTable` and `LocalVariableTable` mappings
+In the example above, At line 3 corresponds to the BCI 0 of the method, so the first bytecode instruction
 
 ### sizes
 What is the impact on the classfile size:
