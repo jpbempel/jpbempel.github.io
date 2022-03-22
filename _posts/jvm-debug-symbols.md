@@ -319,7 +319,7 @@ The above-described mechanism gives precised and accurate stacktraces for except
 
 ## References
  - [javac manual](https://docs.oracle.com/en/java/javase/17/docs/specs/man/javac.html)
- - [https://github.com/openjdk/jdk/blob/master/src/hotspot/share/code/debugInfoRec.hpp](https://github.com/openjdk/jdk/blob/master/src/hotspot/share/code/debugInfoRec.hpp)
+ - [OpenJDK Debug Information Recorder](https://github.com/openjdk/jdk/blob/master/src/hotspot/share/code/debugInfoRec.hpp)
 - [Gradle CompileOptions::isDebug](https://docs.gradle.org/current/javadoc/org/gradle/api/tasks/compile/CompileOptions.html?_ga=2.42477413.1942252367.1645032818-155398221.1645032818#isDebug--)
 - [Gradle JavaCompilerArgumentsBuilder::addMainOptions](https://github.com/gradle/gradle/blob/37911bb86d02d26a5d2ce3f23e01c0d767e3bb91/subprojects/language-java/src/main/java/org/gradle/api/internal/tasks/compile/JavaCompilerArgumentsBuilder.java#L195)
  - [Maven compiler:compile \<debug> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug)
