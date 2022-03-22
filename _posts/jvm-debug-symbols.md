@@ -184,7 +184,7 @@ Constant pool:
 SourceFile: "LineNumbers.java"
 ```
 
-The differences between the 2 are 
+The differences between the 2 outputs are:
 - a `LineNumberTable` section added for each method like:
 ```
 LineNumberTable:
