@@ -330,6 +330,6 @@ The above-described mechanism gives precised and accurate stacktraces for except
  - [Maven compiler:compile \<debug> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debug)
  - [Maven compiler:compile \<debuglevel> parameter](https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html#debuglevel)
 
-
+Thanks to [Ludovic Henry]() and [Christophe Nasarre]() for the review.
 
 
