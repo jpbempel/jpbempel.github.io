@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Inside JVM debug symbols"
+date: 2022-03-22
+---
 # Inside JVM debug symbols
 
 When working on the JVM, almost all stacktraces you see provide source file name and line numbers.
