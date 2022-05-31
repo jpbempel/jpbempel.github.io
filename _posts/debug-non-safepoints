@@ -11,12 +11,12 @@ In this article we will explore the consequence on those profilers to rely on de
 
 One of the most popular profiler based on `AsyncGetCallTrace` is Async-Profiler by Andrei Pangin. Async-Profiler has different method to trigger ticks for collecting stacktraces:
 - Perf events
-- itimer
+- `itimer`
 - Wall clock (regular interval)
 
 Once the tick is triggered, it calls `AsyncGetCallTrace` which will collect stacktraces even if threads are not at safepoint.
 
-Honest Profiler is using the same call.
+Honest Profiler is using the same call with `itimer`.
 
 
 # JFR
@@ -26,7 +26,7 @@ JDK Flight Recorder, for method sampling, use a timer and at each regular interv
 No safepoint requires also for JFR which allow to collect at any point of the code.
 
 
-# Frame resolution
+# Last frame resolution
 Once stacktraces are collected, they are resolved against debug symbol emitted by the JVM (interpreter or JIT) as described in my previous post.
 If you look at stacktraces, bottom of the stack is just a stack of calls, and as we learned previously, calls are safepoint with all debug information
 required to resolve them as a pair of method name and line number.
@@ -37,7 +37,22 @@ safepoint we don't have debug information so we cannot resolve this last frame c
 How JFR & AsyncGetCallTrace manage to get this last frame? is the information accurate? Do we have line number precision?
 
 ## Async-Profiler
+Async-Profiler as several output formats:
+- flamegraph (svg/html)
+- text (flat/traces/collapsed)
+- JFR
 
+For the first 2, where `AsyncGetCallTrace` is used, you will never see line numbers as the author chose to not process/display them.
+for JFR output, line numbers are transfered/preserved from `AsyncGetCallTrace` to the JFR format. This way we can open the file with JDK Mission Control (JMC) 
+to see what line is resolved for the last frame.
+
+## Honest Profiler
+
+
+
+## JFR
+
+The recording format allow line number information for each frame
 
 Last frame is the only thing that may be outside of Safepoint.
 Jfr format can give line information.
@@ -46,7 +61,7 @@ Flamegraph for AsyncProfiler does not give this, but output in JFR can give us t
 PC of the last frame need to be resolved to a line debug info. => by default only for Safepoint, except if DebugNonSafepoint activated!
 
 
-## DebugNonSafepoint
+# DebugNonSafepoint
 There is an interesting flag that modifiy slightly the behavior described above: `-XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints`.  This flag activates the recording of more debug information about PC even if it's not at safepoint. It means we can have a more precise location for stacktraces. It's not affecting exceptions, but profiling tools based on `AsyncGetCallTrace` like [JFR/JMC](https://github.com/openjdk/jmc), [AsyncProfiler](https://github.com/jvm-profiling-tools/async-profiler) or [HonestProfiler](https://github.com/jvm-profiling-tools/honest-profiler).
 
 This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
