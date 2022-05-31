@@ -12,18 +12,33 @@ In this article we will explore the consequence on those profilers to rely on de
 One of the most popular profiler based on `AsyncGetCallTrace` is Async-Profiler by Andrei Pangin. Async-Profiler has different method to trigger ticks for collecting stacktraces:
 - Perf events
 - itimer
-- Wall clock
+- Wall clock (regular interval)
 
+Once the tick is triggered, it calls `AsyncGetCallTrace` which will collect stacktraces even if threads are not at safepoint.
 
-usage of asyncGetCallTrace. Can collect stacktrace outside of Safepoint for walking the stack
+Honest Profiler is using the same call.
+
 
 # JFR
 
-own mechanism (but very similar to AsyncGetCallTrace) 
-
+JDK Flight Recorder, for method sampling, use a timer and at each regular interval pick max 5 Java threads, verify that those threads are executing Java code 
+(internal state maintined by the JVM) and collect stacktraces in a very similar way than AsyncGetCallTrace, though they don't share the same code.
+No safepoint requires also for JFR which allow to collect at any point of the code.
 
 
 # Frame resolution
+Once stacktraces are collected, they are resolved against debug symbol emitted by the JVM (interpreter or JIT) as described in my previous post.
+If you look at stacktraces, bottom of the stack is just a stack of calls, and as we learned previously, calls are safepoint with all debug information
+required to resolve them as a pair of method name and line number.
+
+Only the last frame where the code is currently executed can be anywhere inside a method, including outside of a safepoint. If we are outside a 
+safepoint we don't have debug information so we cannot resolve this last frame correctly. 
+
+How JFR & AsyncGetCallTrace manage to get this last frame? is the information accurate? Do we have line number precision?
+
+## Async-Profiler
+
+
 Last frame is the only thing that may be outside of Safepoint.
 Jfr format can give line information.
 Flamegraph for AsyncProfiler does not give this, but output in JFR can give us the line information.
