@@ -1,12 +1,27 @@
 # profiling stacktraces bias
 
-# async profiler
+# Introduction
+
+I presented in my [previous blog post](https://jpbempel.github.io/2022/03/22/jvm-debug-symbols.html) how debug symbols are generated and used to resolve frames in exception stacktraces. 
+Beside exceptions, stacktraces are also used extensively in profilers. The old profiler generation was based on JVMTI GetAllStackTraces Api (or equivalent) with the known issue related to this technique (safepoint bias).
+The new one is based on the AsyncGetCallTrace un documented API which does not require to be at safepoint to collect stacktraces.
+In this article we will explore the consequence on those profilers to rely on debug symbols resolution described earlier.
+
+# Async-Profiler / Honest profiler
+
+One of the most popular profiler based on `AsyncGetCallTrace` is Async-Profiler by Andrei Pangin. Async-Profiler has different method to trigger ticks for collecting stacktraces:
+- Perf events
+- itimer
+- Wall clock
+
 
 usage of asyncGetCallTrace. Can collect stacktrace outside of Safepoint for walking the stack
 
 # JFR
 
 own mechanism (but very similar to AsyncGetCallTrace) 
+
+
 
 # Frame resolution
 Last frame is the only thing that may be outside of Safepoint.
