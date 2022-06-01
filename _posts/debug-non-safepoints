@@ -48,17 +48,30 @@ For the first 2, where `AsyncGetCallTrace` is used, you will never see line numb
 
 ![](/assets/2022/06/AP_traces.png)
 
-for JFR output, line numbers are transfered/preserved from `AsyncGetCallTrace` to the JFR format. This way we can open the file with JDK Mission Control (JMC) 
+For JFR output, line numbers are transfered/preserved from `AsyncGetCallTrace` to the JFR file format. This way we can open the file with JDK Mission Control (JMC) 
 to see what line is resolved for the last frame.
 
+![](/assets/2022/06/AP_JFR_JMC.png)
 
 ## Honest Profiler
 
+Honest Profiler reports line numbers with flat profiles:
 
+```
+Flat Profile (by line):
+	(t 51.1,s 51.1) AGCT::UnknownJavaErr5 @ (bci=-1,line=-100)
+	(t 18.7,s 18.7) safepoint.profiling.generated.AgctProfilingFails_systemArrayCopy_jmhTest::systemArrayCopy_avgt_jmhStub @ (bci=29,line=165)
+	(t  5.3,s  5.3) safepoint.profiling.AgctProfilingFails::systemArrayCopy @ (bci=23,line=42)
+	(t  5.0,s  5.0) AGCT::UnknownNotJava3 @ (bci=-1,line=-100)
+	(t  1.2,s  1.2) safepoint.profiling.AgctProfilingFails::systemArrayCopy @ (bci=15,line=41)
+	(t  1.2,s  1.2) safepoint.profiling.generated.AgctProfilingFails_systemArrayCopy_jmhTest::systemArrayCopy_avgt_jmhStub @ (bci=13,line=163)
+	(t  1.2,s  1.2) org.openjdk.jmh.infra.Blackhole::consume @ (bci=16,line=404)
+```
 
 ## JFR
 
-The recording format allow line number information for each frame
+The recording format allow line number information to be stored for each frame and in JMC you can distinguish by line number. 
+Useful if you have a method that have multiple calls to the same method. Without the line information it will be difficult to correlate
 
 Last frame is the only thing that may be outside of Safepoint.
 Jfr format can give line information.
@@ -86,6 +99,7 @@ for noLoopBench, add a very expensive operation without loop of call?
  - [https://bugs.openjdk.java.net/browse/JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
  - [https://bugs.openjdk.java.net/browse/JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
  - [http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html](http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)
+ - [Honest profiler](https://github.com/jvm-profiling-tools/honest-profiler/wiki/AsyncGetCallTrace-errors-and-what-they-mean)
 
 
 
