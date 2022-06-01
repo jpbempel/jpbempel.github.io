@@ -73,9 +73,9 @@ Flat Profile (by line):
 The recording format allow line number information to be stored for each frame and in JMC you can distinguish by line number. 
 Useful if you have a method that have multiple calls to the same method. Without the line information it will be difficult to correlate
 
-Last frame is the only thing that may be outside of Safepoint.
-Jfr format can give line information.
-Flamegraph for AsyncProfiler does not give this, but output in JFR can give us the line information.
+![](/assets/2022/06/JFR_JMC_Lines.png)
+
+## Debug information and safepoints
 
 PC of the last frame need to be resolved to a line debug info. => by default only for Safepoint, except if DebugNonSafepoint activated!
 
