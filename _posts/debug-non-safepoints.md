@@ -77,6 +77,83 @@ Useful if you have a method that have multiple calls to the same method. Without
 
 ## Debug information and safepoints
 
+By default, debug information are emitted for the JIT where safepoint are emitted, for example when a method is called, which is convenient for building stacktraces for exception.
+However with sampling profiling like done with `AsyncGetCallTrace` if we want to resolve the last frame with debug information, we need to look for nearby safepoints.
+And this is exactly what JVM is doing when the actual Program Counter (PC) is not exactly on a safepoint.
+
+To demonstrate this beahvior let's take a contrive example:
+
+```java
+    public static int noLoopBench(int idx) {
+        int res = idx * idx;
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	res += (idx % 7) + idx * 31;
+	res -= (idx * 53) % 13 - idx;
+	res += idx * 1003 - (idx * 13 % 7);
+	res += (idx % 19) + idx * 37;
+	res -= (idx * 71) % 7 - idx;
+	res += idx * 97 - (idx * 53 % 29);
+	return res;
+    }
+```
+
+We profile this method with JFR and here how it looks in JMC:
+
+
+
 PC of the last frame need to be resolved to a line debug info. => by default only for Safepoint, except if DebugNonSafepoint activated!
 
 
@@ -92,7 +169,7 @@ https://gist.github.com/jpbempel/b40e5081b98d9021116f845d8adf0be1
 
 for noLoopBench, add a very expensive operation without loop of call?
 
-## Perf impact?
+# Perf impact?
 
 
 ## References
