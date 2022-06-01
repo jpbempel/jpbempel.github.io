@@ -43,9 +43,13 @@ Async-Profiler as several output formats:
 - JFR
 
 For the first 2, where `AsyncGetCallTrace` is used, you will never see line numbers as the author chose to not process/display them.
+
+![](/assets/2022/06/AP_flamegraph.png)
+
+![](/assets/2022/06/AP_traces.png)
+
 for JFR output, line numbers are transfered/preserved from `AsyncGetCallTrace` to the JFR format. This way we can open the file with JDK Mission Control (JMC) 
 to see what line is resolved for the last frame.
-
 
 
 ## Honest Profiler
