@@ -163,6 +163,8 @@ There is an interesting flag that modifiy slightly the behavior described above:
 This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
 
 Beware of the auto-activation (AsyncProfiler via JVMTI or PrintAssembly or CompileCommand)
+Even though there is auto-activation, if you profile by attaching AP, most of the code is already C2 compiled with debug info generated without DebugNonSafepoint. So you are biased to safepoint for last frame resolution (example noLoop?)
+
 
 Example of code without Safepoint, and statistical bias with taht (both AP & JFR)
 https://gist.github.com/jpbempel/b40e5081b98d9021116f845d8adf0be1
