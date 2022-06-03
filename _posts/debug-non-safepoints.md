@@ -172,7 +172,7 @@ I have also crafted an example with 3 different small method that whill be inlin
 
 ```
     public static int inlinedBench(int idx) {
-        int res = 0;
+L28     int res = 0;
         res += compute1(idx);
         res += compute1(res);
         res += compute1(res);
@@ -205,15 +205,15 @@ I have also crafted an example with 3 different small method that whill be inlin
     }
 
     private static int compute1(int value) {
-        return (value % 7) + value * 31 + compute2(value);
+L61     return (value % 7) + value * 31 + compute2(value);
     }
 
     private static int compute2(int value) {
-        return (value * 53) % 13 - value + compute3(value);
+L65     return (value * 53) % 13 - value + compute3(value);
     }
 
     private static int compute3(int value) {
-        return value * 1003 - (value * 13 % 7);
+L69     return value * 1003 - (value * 13 % 7);
     }
 ```
 
