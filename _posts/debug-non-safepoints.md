@@ -84,75 +84,30 @@ And this is exactly what JVM is doing when the actual Program Counter (PC) is no
 To demonstrate this beahvior let's take a contrive example:
 
 ```java
-    public static int noLoopBench(int idx) {
-        int res = idx * idx;
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	res += (idx % 7) + idx * 31;
-	res -= (idx * 53) % 13 - idx;
-	res += idx * 1003 - (idx * 13 % 7);
-	res += (idx % 19) + idx * 37;
-	res -= (idx * 71) % 7 - idx;
-	res += idx * 97 - (idx * 53 % 29);
-	return res;
+L117 public static int noLoopBench(int idx) {
+L118     int res = idx * idx;
+         res += (idx % 7) + idx * 31;
+	 res -= (idx * 53) % 13 - idx;
+	 res += idx * 1003 - (idx * 13 % 7);
+	 res += (idx % 19) + idx * 37;
+	 res -= (idx * 71) % 7 - idx;
+	 res += idx * 97 - (idx * 53 % 29);
+	 res += (idx % 7) + idx * 31;
+	 res -= (idx * 53) % 13 - idx;
+	 // ... skip for brevity ...
+	 res += idx * 1003 - (idx * 13 % 7);
+	 res += (idx % 19) + idx * 37;
+	 res -= (idx * 71) % 7 - idx;
+	 res += idx * 97 - (idx * 53 % 29);
+L167	 return res;
     }
 ```
 
+Full code [here](https://gist.github.com/jpbempel/b40e5081b98d9021116f845d8adf0be1)
+
 We profile this method with JFR and here how it looks in JMC:
 
-
+![](/assets/2022/06/JMC_Profile_noLoop.png)
 
 PC of the last frame need to be resolved to a line debug info. => by default only for Safepoint, except if DebugNonSafepoint activated!
 
