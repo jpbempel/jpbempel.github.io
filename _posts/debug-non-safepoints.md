@@ -118,20 +118,20 @@ Here how it looks in JMC:
 The method is almost 50 lines long, but we have only the first line in almost all samples. As there is no debug information generated (no safepoint)
 for the whole method, except at the entry. What we would expect in that case is a uniform distribution of the samples across all the lines of the method.
 
-Let's try another example:
+Let's try another example with loops now:
 
 ```
 L72 public static int loopsBench(int idx) {
 L73     int res = 0;
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < 5; i++) {
 	    dst[i] = buffer[i];
 	}
 	res += dst[buffer.length-1] == 1 ? buffer[0] : buffer[1];
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < 5; i++) {
 	    dst[i] = buffer[i];
 	}
 	res += dst[buffer.length-1] == 1 ? buffer[0] : buffer[1];
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < 5; i++) {
 	    dst[i] = buffer[i];
 	}
 	// ... skip for brevity ...
@@ -139,6 +139,32 @@ L73     int res = 0;
 L114	return res;
     }
 ```
+
+![](/assets/2022/06/JMC_Profile_loops.png)
+
+Only 2 lines are reported. But in our example loops are in fact counted loops which are handle specially by the JIT, i.e. no safepoint are emitted. let's try with long loop instead:
+
+```
+L72 public static int loopsBench(int idx) {
+L73     int res = 0;
+	for (long i = 0; i < 5; i++) {
+	    dst[(int)i] = buffer[(int)i];
+	}
+	res += dst[buffer.length-1] == 1 ? buffer[0] : buffer[1];
+	for (long i = 0; i < 5; i++) {
+	    dst[(int)i] = buffer[(int)i];
+	}
+	res += dst[buffer.length-1] == 1 ? buffer[0] : buffer[1];
+	for (long i = 0; i < 5; i++) {
+	    dst[(int)i] = buffer[(int)i];
+	}
+	// ... skip for brevity ...
+	res += dst[buffer.length-1] == 1 ? buffer[0] : buffer[1];
+L114	return res;
+    }
+```
+
+![](/assets/2022/06/JMC_Profile_loops_long.png)
 
 
 
