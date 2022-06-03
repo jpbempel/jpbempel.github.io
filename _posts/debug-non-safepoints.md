@@ -142,7 +142,7 @@ L114	return res;
 
 ![](/assets/2022/06/JMC_Profile_loops.png)
 
-Only 2 lines are reported. But in our example loops are in fact counted loops which are handle specially by the JIT, i.e. no safepoint are emitted. let's try with long loop instead:
+Only 2 lines are reported (73 & 77). But in our example loops are in fact [counted loops](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html) which are handle specially by the JIT, i.e. no safepoint are emitted. let's try with long loop instead:
 
 ```
 L72 public static int loopsBench(int idx) {
@@ -166,9 +166,74 @@ L114	return res;
 
 ![](/assets/2022/06/JMC_Profile_loops_long.png)
 
+Now we have our nicely distributed samples for the whole method! But what about inlining?
 
+I have also crafted an example with 3 different small method that whill be inlined:
 
-PC of the last frame need to be resolved to a line debug info. => by default only for Safepoint, except if DebugNonSafepoint activated!
+```
+    public static int inlinedBench(int idx) {
+        int res = 0;
+        res += compute1(idx);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        res += compute1(res);
+        return res;
+    }
+
+    private static int compute1(int value) {
+        return (value % 7) + value * 31 + compute2(value);
+    }
+
+    private static int compute2(int value) {
+        return (value * 53) % 13 - value + compute3(value);
+    }
+
+    private static int compute3(int value) {
+        return value * 1003 - (value * 13 % 7);
+    }
+```
+
+![](/assets/2022/06/JMC_Profile_inlined.png)
+
+Only one line is reported, so no safepoint emitted when methods are inlined.
+
+And if we disable inlining: 
+
+```
+java -XX:-Inline Profile
+```
+
+![](/assets/2022/06/JMC_Profile_inlined_noInlining1.png)
+
+We found our `computeX` methods and if expand one node:
+
+![](/assets/2022/06/JMC_Profile_inlined_noInlining2.png)
+
+Samples are now distributed over the whole `inlinedBench` method.
 
 
 # DebugNonSafepoint
@@ -192,6 +257,7 @@ for noLoopBench, add a very expensive operation without loop of call?
  - [https://bugs.openjdk.java.net/browse/JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
  - [https://bugs.openjdk.java.net/browse/JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
  - [http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html](http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)
+ - [http://psy-lob-saw.blogspot.com/2015/12/safepoints.html](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html)
  - [Honest profiler](https://github.com/jvm-profiling-tools/honest-profiler/wiki/AsyncGetCallTrace-errors-and-what-they-mean)
 
 
