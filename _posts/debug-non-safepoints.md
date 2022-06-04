@@ -77,8 +77,8 @@ Useful if you have a method that have multiple calls to the same method. Without
 
 ## Debug information and safepoints
 
-By default, debug information are emitted for the JIT where safepoint are emitted, for example when a method is called, which is convenient for building stacktraces for exception.
-However with sampling profiling like done with `AsyncGetCallTrace` if we want to resolve the last frame with debug information, we need to look for nearby safepoints.
+By default, debug information are recorded by the JIT where safepoint are emitted, for example when a method is called, which is convenient for building stacktraces for exception.
+However, with sampling profiling like done with `AsyncGetCallTrace`, if we want to resolve the last frame with debug information, we need to look for nearby safepoints.
 And this is exactly what JVM is doing when the actual Program Counter (PC) is not exactly on a safepoint.
 
 To demonstrate this beahvior let's take a contrive example:
@@ -116,7 +116,7 @@ Here how it looks in JMC:
 ![](/assets/2022/06/JMC_Profile_noLoop.png)
 
 The method is almost 50 lines long, but we have only the first line in almost all samples. As there is no debug information generated (no safepoint)
-for the whole method, except at the entry. What we would expect in that case is a uniform distribution of the samples across all the lines of the method.
+for the whole method, except at the entry. What we would expect in that case is a uniform distribution of the samples across all the lines of the method. But instead, when samples are taken, the nearest safepoint is found and symbol are resolved with debug information associated with it.
 
 Let's try another example with loops now:
 
@@ -237,7 +237,35 @@ Samples are now distributed over the whole `inlinedBench` method.
 
 
 # DebugNonSafepoint
-There is an interesting flag that modifiy slightly the behavior described above: `-XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints`.  This flag activates the recording of more debug information about PC even if it's not at safepoint. It means we can have a more precise location for stacktraces. It's not affecting exceptions, but profiling tools based on `AsyncGetCallTrace` like [JFR/JMC](https://github.com/openjdk/jmc), [AsyncProfiler](https://github.com/jvm-profiling-tools/async-profiler) or [HonestProfiler](https://github.com/jvm-profiling-tools/honest-profiler).
+There is an interesting flag that modifiy slightly the behavior described above: `-XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints`.  This flag activates the recording of more debug information about PC even if it's not at safepoint. It means we can have a more precise location for stacktraces. 
+The more debug information the more sample will be precised in line number resolution.
+
+Let's try this flag with our first example:
+
+![](/assets/2022/06/JMC_Profile_noLoop_DebugNonSafepoint.png)
+
+Now we have more samples inside the `noLoopBench` method.
+
+What about inlining?
+
+![](/assets/2022/06/JMC_Profile_inlined_DebugNonSafepoint.png)
+
+Now we have all information about the inlined methods with line numbers where they are called.
+
+# Auto-activation DebugNonSafepoint
+We saw that there is JMV flag to enable Debug information without safepoint, but there is also 2 cases where DEbugNonSafepoint is automatically activated:
+ - [JVMTI](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/code/debugInfoRec.cpp#L107-L113)
+ - [PrintAssembly](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/runtime/arguments.cpp#L4157-L4160) or [CompileCommand](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/compiler/compilerDirectives.cpp#L109-L112)
+
+## JVMTI
+
+## PrintAssembly/CompileCommand
+
+
+
+
+
+JFR page recommend to activate: http://
 
 This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
 
@@ -245,12 +273,10 @@ Beware of the auto-activation (AsyncProfiler via JVMTI or PrintAssembly or Compi
 Even though there is auto-activation, if you profile by attaching AP, most of the code is already C2 compiled with debug info generated without DebugNonSafepoint. So you are biased to safepoint for last frame resolution (example noLoop?)
 
 
-Example of code without Safepoint, and statistical bias with taht (both AP & JFR)
-https://gist.github.com/jpbempel/b40e5081b98d9021116f845d8adf0be1
-
 for noLoopBench, add a very expensive operation without loop of call?
 
 # Perf impact?
+JMH benchmark, measurable/significant diff?
 
 
 ## References
