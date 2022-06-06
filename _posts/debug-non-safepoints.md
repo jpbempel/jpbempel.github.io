@@ -253,30 +253,25 @@ What about inlining?
 Now we have all information about the inlined methods with line numbers where they are called.
 
 # Auto-activation DebugNonSafepoint
-We saw that there is JMV flag to enable Debug information without safepoint, but there is also 2 cases where DEbugNonSafepoint is automatically activated:
+We saw that there is JMV flag to enable Debug information without safepoint, but there is also 2 cases where `DebugNonSafepoint` is automatically activated:
  - [JVMTI](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/code/debugInfoRec.cpp#L107-L113)
  - [PrintAssembly](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/runtime/arguments.cpp#L4157-L4160) or [CompileCommand](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/compiler/compilerDirectives.cpp#L109-L112)
 
 ## JVMTI
+If a JVMTI agent register a callback `CompiledMethodLoad` the flag will be activated. Async-Profiler is doing it [here](https://github.com/jvm-profiling-tools/async-profiler/blob/master/src/profiler.h#L222-L228). Honest Prfiler is doing the same [here](https://github.com/jvm-profiling-tools/honest-profiler/blob/8a3a2ef206968476b89ac0b9184f0bbd0c6bd2e3/src/main/cpp/agent.cpp#L31-L36).
+
+If you start a JVM with the JVMTI agent on the command line, the flag will be activated from the start, and all compiled method will generate Debug information outside of safepoints. However if you attach the agent on the running instance, flag will be enabled only when attached. Then, only new compiled methods will benefit from the flag, and already compiled method will still have only debug information for safepoints.
 
 ## PrintAssembly/CompileCommand
+If you want to print the assembly of a method it will also activate the flag for having more useful information of the assembly for matching with bytecode/line numbers.
 
-
-
-
-
-JFR page recommend to activate: http://
-
-This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
-
-Beware of the auto-activation (AsyncProfiler via JVMTI or PrintAssembly or CompileCommand)
-Even though there is auto-activation, if you profile by attaching AP, most of the code is already C2 compiled with debug info generated without DebugNonSafepoint. So you are biased to safepoint for last frame resolution (example noLoop?)
-
-
-for noLoopBench, add a very expensive operation without loop of call?
+## JFR
+JFR is not activating by deafult `DebugNonSafepoint`. You have to enable it manually. This was recommended at some point by [JFR doc](https://docs.oracle.com/javacomponents/jmc-5-5/jfr-runtime-guide/about.htm#JFRRT112).
 
 # Perf impact?
 JMH benchmark, measurable/significant diff?
+
+This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
 
 
 ## References
