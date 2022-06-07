@@ -269,7 +269,15 @@ If you want to print the assembly of a method it will also activate the flag for
 JFR is not activating by deafult `DebugNonSafepoint`. You have to enable it manually. This was recommended at some point by [JFR doc](https://docs.oracle.com/javacomponents/jmc-5-5/jfr-runtime-guide/about.htm#JFRRT112).
 
 # Perf impact?
-JMH benchmark, measurable/significant diff?
+
+I have put the code of `noLoopBench` method into a JMH benchmark with and without `DebugNonSafepoint` flag and found no significant difference.
+```
+Benchmark                          Mode  Cnt    Score   Error  Units
+MyBenchmark.testDebugNonSafepoint  avgt   25  156.209 ± 1.711  ns/op
+MyBenchmark.testDefault            avgt   25  159.069 ± 2.260  ns/op
+```
+
+It makes sense where the flag will only generating more debug info (map PC -> BCI -> Line numbers) at JIT compilation time. It will only eat more native memory for storage but will not impact runtime performance of the application.
 
 This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
 
