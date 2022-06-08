@@ -282,7 +282,7 @@ There is some caveats about `DebugNonSafepoint`. We may have information about s
 
 # Conclusion
 
-Eventhough new profilers using `AsyncGetCallTrace` or similar technique are not safepoint biased for collecting stacktraces, the resolution of the last frame is still biased on the debug information recorded. And by default they are at safepoint! That's why those profilers try to activate the flag `DebugNonSafepoint` as soon as possible to have more precise resolution.
+Even though new profilers using `AsyncGetCallTrace` or similar technique are not safepoint biased for collecting stacktraces, the resolution of the last frame is still biased on the debug information recorded. And by default they are at safepoint! That's why those profilers try to activate the flag `DebugNonSafepoint` as soon as possible to have more precise resolution.
 I see no problem to always activate the flag, even in production, with the caveat to watch for native memory consumption. It will help you profile continusouly in production.
 
 
