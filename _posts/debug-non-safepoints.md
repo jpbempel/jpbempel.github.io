@@ -3,7 +3,7 @@
 # Introduction
 
 I presented in my [previous blog post](https://jpbempel.github.io/2022/03/22/jvm-debug-symbols.html) how debug symbols are generated and used to resolve frames in exception stacktraces. 
-Beside exceptions, stacktraces are also used extensively in profilers. The old profiler generation was based on JVMTI `GetAllStackTraces` API (or equivalent) with the known issue related to this technique ([safepoint bias](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html).
+Beside exceptions, stacktraces are also used extensively in profilers. The old profiler generation was based on JVMTI `GetAllStackTraces` API (or equivalent) with the known issue related to this technique ([safepoint bias](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html)).
 The new one is based on the `AsyncGetCallTrace` an undocumented API which does not require all threads to be at safepoint to collect stacktraces.
 In this article we will explore the consequences for those profilers to rely on debug symbols resolution described earlier.
 
