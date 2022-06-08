@@ -3,38 +3,38 @@
 # Introduction
 
 I presented in my [previous blog post](https://jpbempel.github.io/2022/03/22/jvm-debug-symbols.html) how debug symbols are generated and used to resolve frames in exception stacktraces. 
-Beside exceptions, stacktraces are also used extensively in profilers. The old profiler generation was based on JVMTI GetAllStackTraces Api (or equivalent) with the known issue related to this technique (safepoint bias).
-The new one is based on the AsyncGetCallTrace un documented API which does not require to be at safepoint to collect stacktraces.
-In this article we will explore the consequence on those profilers to rely on debug symbols resolution described earlier.
+Beside exceptions, stacktraces are also used extensively in profilers. The old profiler generation was based on JVMTI `GetAllStackTraces` API (or equivalent) with the known issue related to this technique ([safepoint bias](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html).
+The new one is based on the `AsyncGetCallTrace` an undocumented API which does not require all threads to be at safepoint to collect stacktraces.
+In this article we will explore the consequences for those profilers to rely on debug symbols resolution described earlier.
 
 # Async-Profiler / Honest profiler
 
-One of the most popular profiler based on `AsyncGetCallTrace` is Async-Profiler by Andrei Pangin. Async-Profiler has different method to trigger ticks for collecting stacktraces:
+One of the most popular profiler based on `AsyncGetCallTrace` is [Async-Profiler](https://github.com/jvm-profiling-tools/async-profiler) by [Andrei Pangin](https://twitter.com/AndreiPangin). Async-Profiler has different methods to trigger ticks for collecting stacktraces:
 - Perf events
 - `itimer`
 - Wall clock (regular interval)
+- ...
 
 Once the tick is triggered, it calls `AsyncGetCallTrace` which will collect stacktraces even if threads are not at safepoint.
 
-Honest Profiler is using the same call with `itimer`.
+Honest Profiler is using the same API call with `itimer`.
 
 
 # JFR
 
 JDK Flight Recorder, for method sampling, use a timer and at each regular interval pick max 5 Java threads, verify that those threads are executing Java code 
-(internal state maintined by the JVM) and collect stacktraces in a very similar way than AsyncGetCallTrace, though they don't share the same code.
+(internal state maintained by the JVM) and collect stacktraces in a very similar way than AsyncGetCallTrace, though they don't share the same code.
 No safepoint requires also for JFR which allow to collect at any point of the code.
 
 
 # Last frame resolution
-Once stacktraces are collected, they are resolved against debug symbol emitted by the JVM (interpreter or JIT) as described in my previous post.
-If you look at stacktraces, bottom of the stack is just a stack of calls, and as we learned previously, calls are safepoint with all debug information
-required to resolve them as a pair of method name and line number.
+Once stacktraces are collected, they are resolved against debug symbols emitted by the JVM (interpreter or JIT) as described in my previous post.
+If you look at stacktraces, the bottom of the stack is just a list of calls, and as we learned previously, calls are safepoint with all debug information required to resolve them as a pair of method name and line number.
 
-Only the last frame where the code is currently executed can be anywhere inside a method, including outside of a safepoint. If we are outside a 
+Only the last frame where the code is currently executing can be anywhere inside a method, including outside of a safepoint. If we are outside a 
 safepoint we don't have debug information so we cannot resolve this last frame correctly. 
 
-How JFR & AsyncGetCallTrace manage to get this last frame? is the information accurate? Do we have line number precision?
+How JFR & `AsyncGetCallTrace` manage to get this last frame? is the information accurate? Do we have line number precision?
 
 ## Async-Profiler
 Async-Profiler as several output formats:
@@ -48,8 +48,7 @@ For the first 2, where `AsyncGetCallTrace` is used, you will never see line numb
 
 ![](/assets/2022/06/AP_traces.png)
 
-For JFR output, line numbers are transfered/preserved from `AsyncGetCallTrace` to the JFR file format. This way we can open the file with JDK Mission Control (JMC) 
-to see what line is resolved for the last frame.
+For JFR output, line numbers are transfered/preserved from `AsyncGetCallTrace` to the JFR file format. This way we can open the file with JDK Mission Control (JMC) to see what line is resolved for the last frame.
 
 ![](/assets/2022/06/AP_JFR_JMC.png)
 
@@ -71,7 +70,7 @@ Flat Profile (by line):
 ## JFR
 
 The recording format allow line number information to be stored for each frame and in JMC you can distinguish by line number. 
-Useful if you have a method that have multiple calls to the same method. Without the line information it will be difficult to correlate
+Useful if you have a method that have multiple calls to the same method. Without the line information it is more difficult to correlate
 
 ![](/assets/2022/06/JFR_JMC_Lines.png)
 
@@ -115,8 +114,8 @@ Here how it looks in JMC:
 
 ![](/assets/2022/06/JMC_Profile_noLoop.png)
 
-The method is almost 50 lines long, but we have only the first line in almost all samples. As there is no debug information generated (no safepoint)
-for the whole method, except at the entry. What we would expect in that case is a uniform distribution of the samples across all the lines of the method. But instead, when samples are taken, the nearest safepoint is found and symbol are resolved with debug information associated with it.
+The method is almost 50 lines long, but we have only the first line in almost all samples. There is no debug information generated (no safepoint)
+for the whole method, except at the entry. What we would have expected in that case is a uniform distribution of the samples across all the lines of the method. But instead, when samples are taken, the nearest safepoint is found and symbol are resolved with debug information associated with it.
 
 Let's try another example with loops now:
 
@@ -142,7 +141,7 @@ L114	return res;
 
 ![](/assets/2022/06/JMC_Profile_loops.png)
 
-Only 2 lines are reported (73 & 77). But in our example loops are in fact [counted loops](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html) which are handle specially by the JIT, i.e. no safepoint are emitted. let's try with long loop instead:
+Only 2 lines are reported (73 & 77). But in our example loops are in fact [counted loops](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html) which are handled specially by the JIT, i.e. no safepoint are emitted. let's try with `long` loop instead:
 
 ```
 L72 public static int loopsBench(int idx) {
@@ -168,7 +167,7 @@ L114	return res;
 
 Now we have our nicely distributed samples for the whole method! But what about inlining?
 
-I have also crafted an example with 3 different small method that whill be inlined:
+I have also crafted an example with 3 different small methods that whill be inlined:
 
 ```
     public static int inlinedBench(int idx) {
@@ -229,7 +228,7 @@ java -XX:-Inline Profile
 
 ![](/assets/2022/06/JMC_Profile_inlined_noInlining1.png)
 
-We found our `computeX` methods and if expand one node:
+We found our `computeX` methods and if we expand one node:
 
 ![](/assets/2022/06/JMC_Profile_inlined_noInlining2.png)
 
@@ -244,7 +243,7 @@ Let's try this flag with our first example:
 
 ![](/assets/2022/06/JMC_Profile_noLoop_DebugNonSafepoint.png)
 
-Now we have more samples inside the `noLoopBench` method.
+Now we have more samples distributed across the `noLoopBench` method.
 
 What about inlining?
 
@@ -253,14 +252,14 @@ What about inlining?
 Now we have all information about the inlined methods with line numbers where they are called.
 
 # Auto-activation DebugNonSafepoint
-We saw that there is JMV flag to enable Debug information without safepoint, but there is also 2 cases where `DebugNonSafepoint` is automatically activated:
+We saw that there is JVM flag to enable debug information without safepoint, but there is also 2 cases where `DebugNonSafepoint` is automatically activated:
  - [JVMTI](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/code/debugInfoRec.cpp#L107-L113)
  - [PrintAssembly](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/runtime/arguments.cpp#L4157-L4160) or [CompileCommand](https://github.com/openjdk/jdk/blob/a113e166e91b9b3d3f74a284888a5135b48dad44/src/hotspot/share/compiler/compilerDirectives.cpp#L109-L112)
 
 ## JVMTI
-If a JVMTI agent register a callback `CompiledMethodLoad` the flag will be activated. Async-Profiler is doing it [here](https://github.com/jvm-profiling-tools/async-profiler/blob/master/src/profiler.h#L222-L228). Honest Prfiler is doing the same [here](https://github.com/jvm-profiling-tools/honest-profiler/blob/8a3a2ef206968476b89ac0b9184f0bbd0c6bd2e3/src/main/cpp/agent.cpp#L31-L36).
+If a JVMTI agent register a callback `CompiledMethodLoad`, the flag will be activated. Async-Profiler is doing it [here](https://github.com/jvm-profiling-tools/async-profiler/blob/master/src/profiler.h#L222-L228). Honest Profiler is doing the same [here](https://github.com/jvm-profiling-tools/honest-profiler/blob/8a3a2ef206968476b89ac0b9184f0bbd0c6bd2e3/src/main/cpp/agent.cpp#L31-L36).
 
-If you start a JVM with the JVMTI agent on the command line, the flag will be activated from the start, and all compiled method will generate Debug information outside of safepoints. However if you attach the agent on the running instance, flag will be enabled only when attached. Then, only new compiled methods will benefit from the flag, and already compiled method will still have only debug information for safepoints.
+If you start a JVM with the JVMTI agent on the command line (`-agentpath:profiler.so`, the flag will be activated from the start, and all compiled methods will generate debug information outside of safepoints. However, if you attach the agent on the running instance, flag will be enabled only when attached. Then, only new compiled methods will benefit from the flag, and already compiled methods will still have only debug information for safepoints.
 
 ## PrintAssembly/CompileCommand
 If you want to print the assembly of a method it will also activate the flag for having more useful information of the assembly for matching with bytecode/line numbers.
@@ -268,7 +267,7 @@ If you want to print the assembly of a method it will also activate the flag for
 ## JFR
 JFR is not activating by deafult `DebugNonSafepoint`. You have to enable it manually. This was recommended at some point by [JFR doc](https://docs.oracle.com/javacomponents/jmc-5-5/jfr-runtime-guide/about.htm#JFRRT112).
 
-# Perf impact?
+# Performance impact
 
 I have put the code of `noLoopBench` method into a JMH benchmark with and without `DebugNonSafepoint` flag and found no significant difference.
 ```
@@ -277,17 +276,23 @@ MyBenchmark.testDebugNonSafepoint  avgt   25  156.209 ± 1.711  ns/op
 MyBenchmark.testDefault            avgt   25  159.069 ± 2.260  ns/op
 ```
 
-It makes sense where the flag will only generating more debug info (map PC -> BCI -> Line numbers) at JIT compilation time. It will only eat more native memory for storage but will not impact runtime performance of the application.
+It makes sense where the flag will only generating more debug information (map PC -> BCI -> Line numbers) at JIT compilation time. It will only eat more native memory for storage but will not impact runtime performance of the application.
 
-This flag seems like magic but tough there is some caveat about it. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
+There is some caveats about `DebugNonSafepoint`. We may have information about stacktraces outside of safepoint, tough, it does not mean it's more accurate about time spent on a method reported by profiling tools. See [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516) and [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677).
+
+# Conclusion
+
+Eventhough new profilers using `AsyncGetCallTrace` or similar technique are not safepoint biased for collecting stacktraces, the resolution of the last frame is still biased on the debug information recorded. And by default they are at safepoint! That's why those profilers try to activate the flag `DebugNonSafepoint` as soon as possible to have more precise resolution.
+I see no problem to always activate the flag, even in production, with the caveat to watch for native memory consumption. It will help you profile continusouly in production.
 
 
 ## References
- - [https://bugs.openjdk.java.net/browse/JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
- - [https://bugs.openjdk.java.net/browse/JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
  - [http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html](http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)
  - [http://psy-lob-saw.blogspot.com/2015/12/safepoints.html](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html)
+ - [http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html)
  - [Honest profiler](https://github.com/jvm-profiling-tools/honest-profiler/wiki/AsyncGetCallTrace-errors-and-what-they-mean)
+ - [https://bugs.openjdk.java.net/browse/JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
+ - [https://bugs.openjdk.java.net/browse/JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
 
 
 
