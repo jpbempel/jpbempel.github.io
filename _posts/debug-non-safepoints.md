@@ -291,6 +291,7 @@ I see no problem to always activate the flag, even in production, with the cavea
  - [Safepoints: Meaning, Side Effects and Overheads](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html) by [Nitsan Wakart](https://twitter.com/nitsanw)
  - [Why (Most) Sampling Java Profilers Are Fucking Terrible](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html) by [Nitsan Wakart](https://twitter.com/nitsanw)
  - [Honest profiler](https://github.com/jvm-profiling-tools/honest-profiler/wiki/AsyncGetCallTrace-errors-and-what-they-mean)
+ - [Async-Profiler](https://github.com/jvm-profiling-tools/async-profiler)
  - [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
  - [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
 
