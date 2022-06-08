@@ -287,12 +287,12 @@ I see no problem to always activate the flag, even in production, with the cavea
 
 
 ## References
- - [http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html](http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)
- - [http://psy-lob-saw.blogspot.com/2015/12/safepoints.html](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html)
- - [http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html)
+ - [The Pros and Cons of AsyncGetCallTrace Profilers](http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html) by [Nitsan Wakart](https://twitter.com/nitsanw)
+ - [Safepoints: Meaning, Side Effects and Overheads](http://psy-lob-saw.blogspot.com/2015/12/safepoints.html) by [Nitsan Wakart](https://twitter.com/nitsanw)
+ - [Why (Most) Sampling Java Profilers Are Fucking Terrible](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html) by [Nitsan Wakart](https://twitter.com/nitsanw)
  - [Honest profiler](https://github.com/jvm-profiling-tools/honest-profiler/wiki/AsyncGetCallTrace-errors-and-what-they-mean)
- - [https://bugs.openjdk.java.net/browse/JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
- - [https://bugs.openjdk.java.net/browse/JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
+ - [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
+ - [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
 
 
 
