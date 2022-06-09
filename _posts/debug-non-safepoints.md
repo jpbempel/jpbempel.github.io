@@ -69,7 +69,7 @@ Flat Profile (by line):
 
 ## JFR
 
-The recording format allow line number information to be stored for each frame and in JMC you can distinguish by line number. 
+The recording format allow line number information or the Bytecode Index to be stored for each frame and in JMC you can distinguish by line number. 
 Useful if you have a method that have multiple calls to the same method. Without the line information it is more difficult to correlate
 
 ![](/assets/2022/06/JFR_JMC_Lines.png)
