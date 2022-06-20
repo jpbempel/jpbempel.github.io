@@ -48,17 +48,30 @@ For JFR output, line numbers are transfered/preserved from `AsyncGetCallTrace` t
 
 ## Honest Profiler
 
-Honest Profiler reports line numbers with flat profiles:
+Honest Profiler can report line numbers with flat profiles:
 
 ```
 Flat Profile (by line):
-	(t 51.1,s 51.1) AGCT::UnknownJavaErr5 @ (bci=-1,line=-100)
-	(t 18.7,s 18.7) safepoint.profiling.generated.AgctProfilingFails_systemArrayCopy_jmhTest::systemArrayCopy_avgt_jmhStub @ (bci=29,line=165)
-	(t  5.3,s  5.3) safepoint.profiling.AgctProfilingFails::systemArrayCopy @ (bci=23,line=42)
-	(t  5.0,s  5.0) AGCT::UnknownNotJava3 @ (bci=-1,line=-100)
-	(t  1.2,s  1.2) safepoint.profiling.AgctProfilingFails::systemArrayCopy @ (bci=15,line=41)
-	(t  1.2,s  1.2) safepoint.profiling.generated.AgctProfilingFails_systemArrayCopy_jmhTest::systemArrayCopy_avgt_jmhStub @ (bci=13,line=163)
-	(t  1.2,s  1.2) org.openjdk.jmh.infra.Blackhole::consume @ (bci=16,line=404)
+	(t  2.6,s  2.6) Profile::noLoopBench @ (bci=291,line=140)
+	(t  2.6,s  2.6) Profile::noLoopBench @ (bci=607,line=164)
+	(t  2.5,s  2.5) Profile::noLoopBench @ (bci=212,line=134)
+	(t  2.5,s  2.5) Profile::noLoopBench @ (bci=370,line=146)
+	(t  2.5,s  2.5) Profile::noLoopBench @ (bci=449,line=152)
+	(t  2.5,s  2.5) Profile::noLoopBench @ (bci=537,line=159)
+	(t  2.5,s  2.5) Profile::noLoopBench @ (bci=181,line=132)
+	(t  2.5,s  2.5) Profile::noLoopBench @ (bci=142,line=129)
+	(t  2.4,s  2.4) Profile::noLoopBench @ (bci=339,line=144)
+	(t  2.4,s  2.4) Profile::noLoopBench @ (bci=528,line=158)
+	(t  2.4,s  2.4) Profile::noLoopBench @ (bci=133,line=128)
+	(t  2.3,s  2.3) Profile::noLoopBench @ (bci=300,line=141)
+	(t  2.3,s  2.3) Profile::noLoopBench @ (bci=616,line=165)
+	(t  2.3,s  2.3) Profile::noLoopBench @ (bci=102,line=126)
+	(t  2.3,s  2.3) Profile::noLoopBench @ (bci=497,line=156)
+	(t  2.3,s  2.3) Profile::noLoopBench @ (bci=260,line=138)
+	(t  2.2,s  2.2) Profile::noLoopBench @ (bci=221,line=135)
+	(t  2.2,s  2.2) Profile::noLoopBench @ (bci=458,line=153)
+	(t  2.2,s  2.2) Profile::noLoopBench @ (bci=576,line=162)
+	(t  2.2,s  2.2) Profile::noLoopBench @ (bci=379,line=147)
 ```
 
 ## JFR
