@@ -26,7 +26,7 @@ Once stacktraces are collected, they are resolved against debug symbols emitted 
 If you look at stacktraces, the bottom of the stack is just a list of frames.  Some are real frames (with a real call to a method) and others are virtual frame, when code was in fact inlined into the caller (a real frame). As we learned previously, calls are at a safepoint with all debug information required to resolve them as a pair of method name and line number. A safepoint is a point into the code where the stak is walkable safely with all debug information available and objects reachable. Note that VM operations (like GC) that needs to stop all the threads and a safepoint are 2 different things. Halted threads are all at safepoint to perform the VM operation safely.
 
 Only the last frame where the code is currently executing can be anywhere inside a method, including outside of a safepoint. If we are outside a 
-safepoint we don't have debug information so we cannot resolve this last frame correctly. 
+safepoint we don't have debug information so we cannot resolve this last frame correctly. Also it's pretty hard to map back to the actual line number information because of the optimization/inlined code that can blur the lines.
 
 How JFR & `AsyncGetCallTrace` manage to get this last frame? Is the information accurate? Do we have line number precision?
 
