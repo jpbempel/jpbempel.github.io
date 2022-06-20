@@ -253,7 +253,7 @@ We saw that there is a JVM flag to enable debug information without safepoint, b
 ## JVMTI
 If a JVMTI agent registers a callback `CompiledMethodLoad`, the flag will be activated. Async-Profiler is doing it [here](https://github.com/jvm-profiling-tools/async-profiler/blob/master/src/profiler.h#L222-L228). Honest Profiler is doing the same [here](https://github.com/jvm-profiling-tools/honest-profiler/blob/8a3a2ef206968476b89ac0b9184f0bbd0c6bd2e3/src/main/cpp/agent.cpp#L31-L36).
 
-If you start a JVM with the JVMTI agent on the command line (`-agentpath:profiler.so`, the flag will be activated from the start, and all compiled methods will generate debug information outside of safepoints. However, if you attach the agent on the running instance, flag will be enabled only when attached. Then, only new compiled methods will benefit from the flag, and already compiled methods will still have only debug information for safepoints.
+If you start a JVM with these JVMTI agents on the command line (`-agentpath:profiler.so`, the flag will be activated from the start, and all compiled methods will generate debug information outside of safepoints. However, if you attach the agent on the running instance, flag will be enabled only when attached. Then, only new compiled methods will benefit from the flag, and already compiled methods will still have only debug information for safepoints.
 
 ## PrintAssembly/CompileCommand
 If you want to print the assembly code of a method, it will also activate the flag for having more useful information of the assembly for matching with bytecode/line numbers.
