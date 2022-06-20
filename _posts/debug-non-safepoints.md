@@ -17,13 +17,13 @@ Honest Profiler by [Richard Warburton](https://twitter.com/RichardWarburto) is u
 # JFR
 
 JDK Flight Recorder, for method sampling, uses a timer and at each regular interval pick max 5 Java threads, verifies that those threads are executing Java code 
-(internal state maintained by the JVM) and collects stacktraces in a very similar way than AsyncGetCallTrace, though they don't share the same code.
+(internal state maintained by the JVM) and collects stacktraces in a very similar way than `AsyncGetCallTrace`, though they don't share the same code.
 JFR is able to collect at any point of the code because waiting for a safepoint is not required.
 
 
 # Last frame resolution
 Once stacktraces are collected, they are resolved against debug symbols emitted by the JVM (interpreter or JIT) as described in my previous post.
-If you look at stacktraces, the bottom of the stack is just a list of calls, and as we learned previously, calls are safepoint with all debug information required to resolve them as a pair of method name and line number.
+If you look at stacktraces, the bottom of the stack is just a list of frames.  Some are real frames (with a real call to a method) and others are virtual frame, when code was in fact inlined into the caller (a real frame). As we learned previously, calls are at a safepoint with all debug information required to resolve them as a pair of method name and line number. A safepoint is a point into the code where the stak is walkable safely with all debug information available and objects reachable. Note that VM operations (like GC) that needs to stop all the threads and a safepoint are 2 different things. Halted threads are all at safepoint to perform the VM operation safely.
 
 Only the last frame where the code is currently executing can be anywhere inside a method, including outside of a safepoint. If we are outside a 
 safepoint we don't have debug information so we cannot resolve this last frame correctly. 
