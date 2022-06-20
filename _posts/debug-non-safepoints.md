@@ -5,19 +5,13 @@
 I presented in my [previous blog post](https://jpbempel.github.io/2022/03/22/jvm-debug-symbols.html) how debug symbols are generated and used to resolve frames in exception stacktraces. 
 Beside exceptions, stacktraces are also used extensively in profilers. The old profiler generation was based on JVMTI `GetAllStackTraces` API (or equivalent) with the known issue related to this technique ([safepoint bias](http://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html)).
 The new one is based on the `AsyncGetCallTrace`, an undocumented API which does not require all threads to be at safepoint to collect stacktraces. Nitsan Wakart was describing its mechanism in [this post](http://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html).
-In this article we will explore the consequences for those profilers to rely on debug symbols resolution described earlier.
+In this article we will explore the consequences for those profilers which rely on debug symbols resolution described earlier.
 
 # Async-Profiler / Honest profiler
 
-One of the most popular profiler based on `AsyncGetCallTrace` is [Async-Profiler](https://github.com/jvm-profiling-tools/async-profiler) by [Andrei Pangin](https://twitter.com/AndreiPangin). Async-Profiler has different methods to trigger ticks for collecting stacktraces:
-- Perf events
-- `itimer`
-- Wall clock (regular interval)
-- ...
+One of the most popular profiler based on `AsyncGetCallTrace` is [Async-Profiler](https://github.com/jvm-profiling-tools/async-profiler) by [Andrei Pangin](https://twitter.com/AndreiPangin). Async-Profiler calls [`AsyncGetCallTrace`](https://github.com/openjdk/jdk/blob/5cdb4b196047d4f2d69df0fc73102c102bf042f7/src/hotspot/share/prims/forte.cpp#L509-L660) to collect stacktraces even if threads are not at safepoint.
 
-Once the tick is triggered, it calls `AsyncGetCallTrace` which will collect stacktraces even if threads are not at safepoint.
-
-Honest Profiler is using the same API call with `itimer`.
+Honest Profiler by [Richard Warburton](https://twitter.com/RichardWarburto) is using the same API call.
 
 
 # JFR
