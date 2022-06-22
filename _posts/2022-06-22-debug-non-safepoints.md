@@ -16,7 +16,7 @@ In this article we will explore the consequences for those profilers which rely 
 
 One of the most popular profiler based on `AsyncGetCallTrace` is [Async-Profiler](https://github.com/jvm-profiling-tools/async-profiler) by [Andrei Pangin](https://twitter.com/AndreiPangin). Async-Profiler calls [`AsyncGetCallTrace`](https://github.com/openjdk/jdk/blob/5cdb4b196047d4f2d69df0fc73102c102bf042f7/src/hotspot/share/prims/forte.cpp#L509-L660) to collect stacktraces even if threads are not at safepoint.
 
-Honest Profiler by [Richard Warburton](https://twitter.com/RichardWarburto) is using the same API call.
+[Honest Profiler](https://github.com/jvm-profiling-tools/honest-profiler) by [Richard Warburton](https://twitter.com/RichardWarburto) is using the same API call.
 
 
 ## JFR
