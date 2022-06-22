@@ -90,7 +90,7 @@ Useful if you have a method that have multiple calls to the same method. Without
 
 By default, debug information are recorded by the JIT where safepoint are emitted, for example when a method is called, which is convenient for building stacktraces for exception.
 However, with sampling profiling like done with `AsyncGetCallTrace`, if we want to resolve the last frame with debug information, we need to look for nearby safepoints. 
-When the JVM has found that the current PC is in a Java Frame, it tries to get the actual debug information (called `PCDesc`) with the method `CompiledMethod::pc_desc_at()` called from [here](https://github.com/openjdk/jdk/blob/affbd72aa3dce80e2ad54ff775c6f7469f38b05b/src/hotspot/share/prims/forte.cpp#L157) for `AsyncGetCallTrace`.
+When the JVM has found that the current PC is in a Java frame, it tries to get the actual debug information (called `PCDesc`) with the method `CompiledMethod::pc_desc_at()` called from [here](https://github.com/openjdk/jdk/blob/affbd72aa3dce80e2ad54ff775c6f7469f38b05b/src/hotspot/share/prims/forte.cpp#L157) for `AsyncGetCallTrace`.
 If the `PCDesc` is not found, it will then try to found the nearest "below" by searching toward the end of the method with `CompiledMethod::pc_desc_near()` called from [here](https://github.com/openjdk/jdk/blob/affbd72aa3dce80e2ad54ff775c6f7469f38b05b/src/hotspot/share/prims/forte.cpp#L171) for `AsyncGetCallTrace` and [here]([https://github.com/openjdk/jdk/blob/master/src/hotspot/share/jfr/periodic/sampling/jfrCallTrace.cpp#L74](https://github.com/openjdk/jdk/blob/affbd72aa3dce80e2ad54ff775c6f7469f38b05b/src/hotspot/share/jfr/periodic/sampling/jfrCallTrace.cpp#L74)) for JFR.
 
 
