@@ -310,7 +310,7 @@ I see no problem to always activate the flag, even in production, with the cavea
  - [JDK-8201516](https://bugs.openjdk.java.net/browse/JDK-8201516)
  - [JDK-8281677](https://bugs.openjdk.java.net/browse/JDK-8281677)
 
-Thanks to [Christophe Nasarre](https://twitter.com/chnasarre), [Marucs Hirt](https://twitter.com/hirt) & [Nitsan Wakart](https://twitter.com/nitsanw) for the review.
+Thanks to [Christophe Nasarre](https://twitter.com/chnasarre), [Marcus Hirt](https://twitter.com/hirt) & [Nitsan Wakart](https://twitter.com/nitsanw) for the review.
 
 
 
