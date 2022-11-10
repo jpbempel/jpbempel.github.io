@@ -4,4 +4,5 @@ description: Performance Minded
 twitter_username: jpbempel
 github_username: jpbempel
 google_analytics: UA-165913406-1
-
+plugins:
+  - jekyll-feed
