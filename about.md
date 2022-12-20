@@ -12,3 +12,5 @@ Developer passionate by performance, runtimes (JVM, CLR) and Mechanical Sympathy
 [Twitter](https://twitter.com/jpbempel)
 
 [Linkedin](https://www.linkedin.com/in/jeanphilippebempel/)
+
+[Mastodon](https://mastodon.online/@jpbempel)
