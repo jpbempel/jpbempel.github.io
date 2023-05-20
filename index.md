@@ -15,7 +15,7 @@
       <td style="border: 0px">Apr 2023</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/Mastering%20GC_%20tame%20the%20beast%20and%20make%20it%20your%20best%20ally.pdf">Mastering GC: tame the beast and make it your best ally</a></td>
     </tr>
     <tr>
-      <td style="border: 0px">Apr 2021</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/Real%20World%20JFR.pdf">Real World JFR: Experiences building and deploying a continuous profiler at scale</a></td>
+      <td style="border: 0px">Apr 2021</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/Real%20World%20JFR.pdf">Real World JFR:<br> Experiences building and deploying a continuous profiler at scale</a></td>
     </tr>
     <tr>
       <td style="border: 0px">Feb 2021</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/Production%20profiling%20with%20JDK%20Flight%20Recorder%20&%20JDK%20Mission%20Control.pdf">Production profiling with JDK Flight Recorder & JDK Mission Control</a></td>
