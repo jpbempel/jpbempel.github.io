@@ -7,3 +7,11 @@
     </tr>
   {% endfor %}
 </table>
+
+## presentation slides
+
+<table style="border: 0px">
+    <tr>
+      <td style="border: 0px">Apr 2014</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/measuringdirectlyfromcpu-hardwareperformancecounters.pdf">Measuring directly from CPU: Hardware Performance Counters</a></td>
+    </tr>
+</table>
