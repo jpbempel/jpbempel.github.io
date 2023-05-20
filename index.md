@@ -8,7 +8,7 @@
   {% endfor %}
 </table>
 
-## public talk slides
+## [Public talk slides](#public-talk-slides)
 
 <table style="border: 0px">
     <tr>
