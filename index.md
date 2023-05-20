@@ -8,9 +8,12 @@
   {% endfor %}
 </table>
 
-## presentation slides
+## public talk slides
 
 <table style="border: 0px">
+    <tr>
+      <td style="border: 0px">Apr 2015</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/lock-freeprogramming-protips.pdf">Lock-free programming: Pro Tips</a></td>
+    </tr>
     <tr>
       <td style="border: 0px">Apr 2014</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/measuringdirectlyfromcpu-hardwareperformancecounters.pdf">Measuring directly from CPU: Hardware Performance Counters</a></td>
     </tr>
