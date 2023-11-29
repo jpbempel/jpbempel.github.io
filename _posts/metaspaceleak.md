@@ -37,7 +37,9 @@ The goal of our demo application is to verify that our instrumentation is workin
 
 Let's speed up the process by tight looping on this retransformation: Instantly, we were filling up the Metaspace and got OOME (when capped).
 
-Now, we have the source of this increase. But is it really a leak, or a problem with Metaspace fragmentation? (Link to Metapsace blog post form Thomas stuefe)
+Now, we have the source of this increase. But is it really a leak, or a problem with Metaspace fragmentation?
+
+Here I recommend the read of the blog posts from Thomas Stuefe about [Metaspace](https://stuefe.de/posts/metaspace/what-is-metaspace/).
 
 ## Reproducer
 
@@ -510,8 +512,8 @@ This long standing memory leak was an interesting journey in all phases: diagnos
 ## References
 
 * [Report of the leak in OpenJDK mailing list](https://mail.openjdk.org/pipermail/hotspot-dev/2023-May/074576.html)
-* [ticket in JBS](https://bugs.openjdk.org/browse/JDK-8308762)
+* [Ticket in JDK Bug System](https://bugs.openjdk.org/browse/JDK-8308762)
 * [Pull Request in OpenJDK repostiory](https://github.com/openjdk/jdk/pull/14780)
 * [Redefine/Retranform process, big comment in source code](https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L35-L324)
-* [What is Metaspace](https://stuefe.de/posts/metaspace/what-is-metaspace/) by Thomas Stuefe
-* [Metaspace Architecture](https://stuefe.de/posts/metaspace/metaspace-architecture/) by Thomas Stuefe
+* [What is Metaspace](https://stuefe.de/posts/metaspace/what-is-metaspace/) by [Thomas Stuefe](https://twitter.com/tstuefe)
+* [Metaspace Architecture](https://stuefe.de/posts/metaspace/metaspace-architecture/) by [Thomas Stuefe](https://twitter.com/tstuefe)
