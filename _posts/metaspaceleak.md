@@ -481,7 +481,7 @@ To understand the process of merging the constant pools you just have read the f
 // tracked as needed.
 ```
 
-In our case we are referencing with a `Methodref` the `Throwable` class, and David Holmes pointed us to the class verifier, in ClassVerifier::verify_exception_handler_table:
+In our case we are referencing with a `Methodref` the `Throwable` class, and David Holmes from Oracle pointed us to the class verifier, in [`ClassVerifier::verify_exception_handler_table`](https://github.com/openjdk/jdk/blob/cdd1a6e851bcaf4a25d4a405b8ee0b0d5b83a4a9/src/hotspot/share/classfile/verifier.cpp#L1894-L1901):
 
 ```
       VerificationType throwable =
@@ -493,22 +493,19 @@ In our case we are referencing with a `Methodref` the `Throwable` class, and Dav
         cp->klass_at(catch_type_index, CHECK);
       }
 ```
-Basically the verifier will pre-resolve a Throwable class in the constant pool in case of a caught `OutOfMemoryError`. In that case we don't want to do
-a resolution that could fail because of new potential allocations...
+Basically the verifier will pre-resolve a Throwable class in the constant pool in case of a caught `OutOfMemoryError`. In that case we don't want to do a resolution that could fail because of new potential allocations...
 
-Throawble is therefore the only class resolved into the constant pool, but with the process described above it means the entry compaison will fail and generate new entries in the
-merged constant pool, allocting new buffers, and each time for every retransformation... here the leak!
+`Throawble` is therefore the only class resolved into the constant pool, but with the process described above it means the entry comparison will fail and generate new entries in the merged constant pool, allocting new buffers, and each time for every retransformation... here the leak!
 
 ### The fix
 
-After some discussions, specially with Coleen Philimore about the bug and attempts to fix it, she directs me toward a simple fix:
-Make sure all entries in the constant pool that are related to Class are marked as unresolved even if this is a Throwable class during the comparison/merge
-you can find the PR merged here.
+After some discussions, specially with Coleen Phillimore about the bug and attempts to fix it, she directs me toward a simple fix:
+Make sure all entries in the constant pool that are related to `Class` are marked as unresolved even if this is a Throwable class during the comparison/merge
+you can find the PR merged [here](https://github.com/openjdk/jdk/pull/14780).
 
 ## Conclusion
 
-This long standing memory leak was a interesting journey for all phases: diagnostic, reproduciblity, understanding and fix. The OpenJDK team was also very helpful to understand
-and prepare the fix.
+This long standing memory leak was an interesting journey in all phases: diagnostic, reproduciblity, understanding and fix. The OpenJDK team was also very helpful to understand and prepare the fix.
 
 ## References
 
