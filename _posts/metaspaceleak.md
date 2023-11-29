@@ -219,7 +219,7 @@ We can notice that the size of the constant pool (cp) used for retransforming th
 
 To help me navigate through the JVM code, I even profiled the reproducer to have a grasp of what's going on here:
 
-![](/assets/2023/12/profile_leak.html)
+[![](/assets/2023/12/ProfileLeak.png)]()
 
 With this profile it seems more obvious that the `retransform` operation is done at safepoint and under Stop-The-World of application threads.
 With the logs and the profile we can correlate to find which method is doing the allocation that can leak to Metaspace.
