@@ -42,7 +42,7 @@ Now, we have the source of this increase. But is it really a leak, or a problem 
 ## Reproducer
 
 Even if the source is found, coming up with a PetClinic app saying there is a leak to an OpenJDK mailing list sounds not like a good idea. We needed to find a minimal reproducer that everybody can play with and try some small modifications to understand the root cause.
-Our demo is a modified version of the original Petclinic. So I tried to clone again the original version and try to reproduce our issue. But I failed. The original code of the class we are targeting to retransform was not including the thing that triggers our leak. Therefore the strategy then was to bisect the code to diff the trigger. Our modification is not huge so I could proceed step by step. I commented some large portions of code and tried if the issue was still there. After several iterations I found the portion of code that seems to be the culprit:
+Our demo is a modified version of the original PetClinic. So I tried to clone again the original version and to reproduce our issue. But I failed. The original code of the class we are targeting to retransform was not including the thing that triggers our leak. Therefore the strategy was to bisect the code to diff the trigger. Our modification is not huge so I could proceed step by step. I commented some large portions of code and tried if the issue was still there. After several iterations I found the portion of code that seems to be the culprit:
 
 ```
   private void syntheticSpan() {
@@ -57,7 +57,7 @@ Our demo is a modified version of the original Petclinic. So I tried to clone ag
   }
 ```
 
-For our demo, I was generating synthetic spans with the above code. Commenting the full method was not generating any leak. But the moment I add the try-with-resources statement, the issue is triggered. Let's verify with a small reproducer:
+For our demo, I am generating synthetic spans with the above code. Commenting the full method was not generating any leak. But the moment I added the try-with-resources statement, the issue was triggered. Let's verify with a small reproducer:
 
 ```
 class MyClass {
@@ -75,7 +75,7 @@ class MyClass {
 }
 ```
 
-the code for the retransforation is added as a javaagent:
+The code for the retransformation is added as a java agent:
 ```
 public class Agent {
     public static void premain(String arg, Instrumentation inst) {
@@ -112,7 +112,7 @@ and run with :
 
 Note: No `ClassFileTransformer` is registered here, we are just invoking the retransform operation while no modification of the bytecode is required.
 
-With this setup, I can now reproduce easily the leak and I can confidently report this problem to [OpenJDK mailing list](https://mail.openjdk.org/pipermail/hotspot-dev/2023-May/074576.html): 
+With this setup, I could reproduce easily the leak and I could confidently report this problem to [OpenJDK mailing list](https://mail.openjdk.org/pipermail/hotspot-dev/2023-May/074576.html): 
 
 ## Finding the root cause
 
@@ -512,7 +512,9 @@ and prepare the fix.
 
 ## References
 
-OpenJDK mailing list: https://mail.openjdk.org/pipermail/hotspot-dev/2023-May/074576.html
-ticket in JBS: https://bugs.openjdk.org/browse/JDK-8308762
-PR: https://github.com/openjdk/jdk/pull/14780
-Redefine/Retranform process, big comment in source code: https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L35-L324
+* [Report of the leak in OpenJDK mailing list](https://mail.openjdk.org/pipermail/hotspot-dev/2023-May/074576.html)
+* [ticket in JBS](https://bugs.openjdk.org/browse/JDK-8308762)
+* [Pull Request in OpenJDK repostiory](https://github.com/openjdk/jdk/pull/14780)
+* [Redefine/Retranform process, big comment in source code](https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L35-L324)
+* [What is Metaspace](https://stuefe.de/posts/metaspace/what-is-metaspace/) by Thomas Stuefe
+* [Metaspace Architecture](https://stuefe.de/posts/metaspace/metaspace-architecture/) by Thomas Stuefe
