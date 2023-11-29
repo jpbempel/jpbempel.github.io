@@ -44,7 +44,7 @@ Now, we have the source of this increase. But is it really a leak, or a problem 
 Even if the source is found, coming up with a PetClinic app saying there is a leak to an OpenJDK mailing list sounds not like a good idea. We needed to find a minimal reproducer that everybody can play with and try some small modifications to understand the root cause.
 Our demo is a modified version of the original PetClinic. So I tried to clone again the original version and to reproduce our issue. But I failed. The original code of the class we are targeting to retransform was not including the thing that triggers our leak. Therefore the strategy was to bisect the code to diff the trigger. Our modification is not huge so I could proceed step by step. I commented some large portions of code and tried if the issue was still there. After several iterations I found the portion of code that seems to be the culprit:
 
-```
+```java
   private void syntheticSpan() {
     Tracer tracer = GlobalTracer.get();
     Span synSpan = tracer.buildSpan("synthetic").withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_CLIENT).start();
@@ -59,7 +59,7 @@ Our demo is a modified version of the original PetClinic. So I tried to clone ag
 
 For our demo, I am generating synthetic spans with the above code. Commenting the full method was not generating any leak. But the moment I added the try-with-resources statement, the issue was triggered. Let's verify with a small reproducer:
 
-```
+```java
 class MyClass {
     private static void writeFile() {
       try (TWR twr = new TWR()) {
@@ -76,7 +76,7 @@ class MyClass {
 ```
 
 The code for the retransformation is added as a java agent:
-```
+```java
 public class Agent {
     public static void premain(String arg, Instrumentation inst) {
         new Thread(() -> retransformLoop(inst, arg)).start();
@@ -119,7 +119,7 @@ With this setup, I could reproduce easily the leak and I could confidently repor
 With that reproducer I was now confident that someone will find the exact root cause of this leak and a patch will be made for fixing it. My curiosity was too strong and I continue
 to investigate the leak to understand it. Let's focus on the try-with-resources: This is only a syntactic sugar, let's use a decompiler to get basic structure of an equivalent:
 
-```
+```java
   TWR var0 = new TWR();
   try {
       var0.process();
@@ -138,7 +138,7 @@ Playing now with this code, I noticed when I comment the line `var4.addSuppresse
 Using `catch` with `Throwable` is not something you do everyday, usually you are using a `catch (Exception ex)`.
 let's try to focus more on this:
 
-```
+```java
 class MyClass {
     private static void m() {
         try {
