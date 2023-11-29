@@ -1,17 +1,17 @@
 ---
 layout: default
 title: "Chasing a Metaspace leak"
-date: 2023-10-?
+date: 2023-12-?
 ---
 # Chasing a Metaspace leak
 
 ## Introduction
 
-I have recently chased a bug into OpenJDK that was here since at least JDK 8, here the story of my journey to identify it and fix it.
+I have recently chased a bug into [OpenJDK](https://github.com/openjdk/jdk) that was here since at least JDK 8, here the story of my journey to identify and fix it.
 
 ## Context
 
-At Datadog I am working on Dynamic Instrumentation product as the name suggest instrument any part of the code dynamically for inserting code that would capture execution context and state (stack traces, fields, arguments local variables), generate logs, metrics, span or span tags.
+At Datadog, I am working on Dynamic Instrumentation product. As the name suggest instrument any part of the code dynamically for inserting code that would capture execution context and state (stack traces, fields, arguments local variables), generate logs, metrics, span or span tags.
 On the JVM we are, of course, relying heavily on the instrumentation API for doing this, which gives us the advantage and guartanee that it is a supported API that is used since many years (introduced since JDK 1.5).
 We have in place along our backend, a demo application (based on Spring [PetClinic](https://github.com/spring-projects/spring-petclinic)) that we are using to continuously verify that the basic features are working as expected.
 One day, we noted that the pod that was running this demo, was periodically restarted. Our journey started!
@@ -19,29 +19,25 @@ One day, we noted that the pod that was running this demo, was periodically rest
 ## Troubleshooting
 
 First thing is to understand for which reason a pod is restarting. Looking at pod description (OOMkill) we can see that the culprit is the memory used by the pod exceeeds the limit of the container.
-Maybe we overlooked the sizing of the container and what is required by the demo to run correctly. The Java will go beyond what we configured as the Xmx but for the native part it's
-another story. Metaspace, Code cache, GC structs, VM structs, there are plenty of reason the spaces can grow. But increasing the container memory was not sufficient.
-So a deeper analysis was required.
-looking at all native spaces, Metaspace was the one that correlates the increase of RSS memory of the process:
+Maybe we overlooked the sizing of the container and what is required by the demo to run correctly. The Java heap will not go beyond what we configured as the Xmx but for the native part it's another story: Metaspace, Code cache, GC structs, VM structs, there are plenty of reasons the spaces can grow. But increasing the container memory was not sufficient.
+So a deeper analysis was required. Looking at all native spaces, Metaspace was the one that correlates the increase of RSS memory of the process:
 
 ![](/assets/2023/12/DebuggerDemoMetaspaceRSS.png)
 
 Do we have a class/classloader leak?
 Checking with the command `jcmd <pid> VM.metaspace` or looking at JFR recordings, the number of classes is still stable.
 
+By default, Metaspace is unbounded: it can increase its size until there is no more memory on the host/container. But we can cap it with `-XX:MaxMetaspaceSize` JVM argument. Let's put somehting reasonable and avoid this OOMkill.
 
-By default Metaspace is unbounded, it can increase its size until there is no more memory on the host/container. But we can cap it with MaxMetaspaceSize. So let's put somehting reasonable and avoid this OOMkill.
-It turns out that we reach the maximum of the Metaspace and OutOfMemoryError exception is thrown but leaving the process alive in a bad state. This is worse than the OOmkill in a container environement which will restart automatically the container.
-I was not sure if the metaspace triggers a GC to reclaim unused classes in those circumstances, so I verify it into the OpenJDK code.
-The allocation for Metaspace happens using this [Metaspace::allocate method](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/memory/metaspace.cpp#L890) that attempt an allocation and if no allocation is possible because the Metaspace is full, it calls [CollectedHeap::satisfy_failed_metadata_allocation method](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/collectedHeap.cpp#L317) that will trigger a special VM operation: [VM_CollectForMetadataAllocation](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/gcVMOperations.cpp#L231) at safepoint and will trigger a GC (for G1 a concurrent cycle otherwise a Full GC) with cause: Metadata Threshold. So if an OOME is thrown it means we have really not enough space or a leak is happening.
+It turns out that we reach the maximum of the Metaspace and `OutOfMemoryError` (OOME) exception is thrown but leaving the process alive in a bad state. This is worse than the OOMkill in a container environement which will restart automatically the container.
+I was not sure if the Metaspace triggers a GC to reclaim unused classes in those circumstances, so I verified it into the OpenJDK code.
+The allocation for Metaspace happens using this [`Metaspace::allocate` method](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/memory/metaspace.cpp#L890) that attempt an allocation and if no allocation is possible because the Metaspace is full, it calls [`CollectedHeap::satisfy_failed_metadata_allocation` method](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/collectedHeap.cpp#L317) that will trigger a special VM operation: [`VM_CollectForMetadataAllocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/gcVMOperations.cpp#L231) at safepoint and will trigger a GC (for G1 a concurrent cycle otherwise a Full GC) with cause: `Metadata Threshold`. So if an OOME is thrown it means we have really not enough space or a leak is happening.
 
-But the goal of this demo is to verify that our instrumentation is working as expected. This instrumentation is done through a ClassFileTransformer registered through Instrumentation
-API. When a class is loaded, the transformer check if we need to instrument or not this class. But what if the class is already loaded and we need to instrument it? in this case
-we use the retransformClasses call. For our demos we are contimuously (every minute) trying to retransform the same class to inject code.
+The goal of our demo application is to verify that our instrumentation is working as expected. This instrumentation is done through a `ClassFileTransformer` registered through Instrumentation API. When a class is loaded, the transformer checks if we need to instrument or not this class. But what if the class is already loaded and we need to instrument it? In this case, we use the `retransformClasses` method. For our demos we are continuously (every minute) trying to retransform the same class to inject code.
 
-Let's speed up the process by tight looping on this retransformation. Instantly we are filling up the Metaspace and get OOME (when capped).
+Let's speed up the process by tight looping on this retransformation: Instantly, we are filling up the Metaspace and get OOME (when capped).
 
-Now we have the source of this increase. But is it really a leak, or a problem with Metaspace fragmentation? (Link to Metapsace blog post form Thomas stuefe)
+Now, we have the source of this increase. But is it really a leak, or a problem with Metaspace fragmentation? (Link to Metapsace blog post form Thomas stuefe)
 
 ## Reproducer
 
@@ -277,7 +273,7 @@ It allows to share this strings with other bytecode instruction and having a com
 
 When retransforming a class, bytecode may have changed so constant may have changed as well. We need to adjust entries: create additionals, remove unnecessaries. This is done by copying the original then merging. As entries of constant pool can reference each other, loading it involved also a pass for resolution. in the example above, entry #1
 `#1 = Methodref          #4.#21`
-reference enntry #4 and #21, so we need to resolve it to get all information needed when a bytecode refernce this #1 entry like invoking this method.
+reference entry #4 and #21, so we need to resolve it to get all information needed when a bytecode refernce this #1 entry like invoking this method.
 
 For its internal representation the JVM is using some specific values to indicate the state of the constant pool entry resolved/unresolved.
 
@@ -290,7 +286,7 @@ V [libjvm.so+0xae518c] VM_RedefineClasses::merge_cp_and_rewrite(InstanceKlass*, 
 ```
 
 `cp` stands for constant pool. Looks like a good entry point to navigate into the code and understands the process involved. 
-To understand the process of merging the constant pools you just have read the following comment found [here](here: https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L102-L292). This is like blog post:):
+To understand the process of merging the constant pools you just have read the following comment found [here](https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L102-L292). This is like blog post:):
 
 ```
 // Constant Pool Details:
