@@ -143,18 +143,18 @@ class MyClass {
     private static void m() {
         try {
             int i = 42;
-        } catch (Throwable var4) {
-            var4.printStackTrace();
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 }
 ```
 
-By just adding a `catch (Throwable t)` and using the throwable variable by calling a method I am able to leak the Metaspace during the retransformation! Here is my final minimal reproducer. Sounds stupidly silly!
+By just adding a `catch (Throwable t)` and using the throwable variable by calling a method I was able to leak the Metaspace during the retransformation! Here is my final minimal reproducer. Sounds stupidly silly!
 But what happens If I replace by the usual `Exception` instead of `Throwable`? No more leak!
 
 
-With this minimal reproducer it was then easier to understand what's happening during the retransform operation. Though, I have no clue where to look into the JVM code to start digging. One idea was to use the JVM flag `-XX:+CrashOnOutOfMemoryError` that will give me more context on the OutOfmemoryError raised by the Metaspace.
+With this minimal reproducer it was then easier to understand what's happening during the retransform operation. Though, I had no clue where to look into the JVM code to start digging. One idea was to use the JVM flag `-XX:+CrashOnOutOfMemoryError` that will give me more context on the `OutOfmemoryError` raised by the Metaspace.
 
 Here the stacktrace:
 ```
@@ -192,10 +192,10 @@ V [libjvm.so+0xcae8d8] thread_native_entry(Thread*)+0xd8
 Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
 ```
 
-the lines `VM_RedefineClasses::merge_cp_and_rewrite` and `ConstantPool::allocate` give us a direction toward constant pools management during the `retransform` operation.
+The lines `VM_RedefineClasses::merge_cp_and_rewrite` and `ConstantPool::allocate` give us a direction toward constant pools management during the `retransform` operation.
 
-Discussions with OpenJDK community helps me also to diagnostic what's going on at the JVM level. Using logging of the JVM provides good insight.
-Running with `-Xlog:redefine*` and here the end of the output just before the OOME:
+Discussions with OpenJDK community helped me also to diagnostic what's going on at the JVM level. Using logging of the JVM provides good insight.
+I ran with `-Xlog:redefine*` and the end of the output just before the OOME is the following:
 
 ```
 [2.565s][info][redefine,class,constantpool] old_cp_len=3871, scratch_cp_len=3871
@@ -213,9 +213,9 @@ Running with `-Xlog:redefine*` and here the end of the output just before the OO
 [2.585s][info][redefine,class,load,exceptions] merge_cp_and_rewrite exception: 'java/lang/OutOfMemoryError'
 ```
 
-We can notice that the size of the constant pool (cp) used for retransforming the class is increasing linearly by 2 entries for each operation until... boom!
+We can notice that the size of the constant pool (cp) used for retransforming the class is increasing linearly by 2 entries (old_cp_len) for each operation until... boom!
 
-To help me navigate through the JVM code, I even profile the reproducer to have grasp on what's going on here:
+To help me navigate through the JVM code, I even profiled the reproducer to have a grasp of what's going on here:
 
 [profile_leak.html]
 
