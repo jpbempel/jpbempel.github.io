@@ -13,37 +13,36 @@ I have recently chased a bug into [OpenJDK](https://github.com/openjdk/jdk) that
 
 At Datadog, I am working on Dynamic Instrumentation product. As the name suggest instrument any part of the code dynamically for inserting code that would capture execution context and state (stack traces, fields, arguments local variables), generate logs, metrics, span or span tags.
 On the JVM we are, of course, relying heavily on the instrumentation API for doing this, which gives us the advantage and guartanee that it is a supported API that is used since many years (introduced since JDK 1.5).
-We have in place along our backend, a demo application (based on Spring [PetClinic](https://github.com/spring-projects/spring-petclinic)) that we are using to continuously verify that the basic features are working as expected.
+We have in place, along our backend, a demo application (based on Spring [PetClinic](https://github.com/spring-projects/spring-petclinic)) that we are using to continuously verify that the basic features are working as expected.
 One day, we noted that the pod that was running this demo, was periodically restarted. Our journey started!
 
 ## Troubleshooting
 
-First thing is to understand for which reason a pod is restarting. Looking at pod description (OOMkill) we can see that the culprit is the memory used by the pod exceeeds the limit of the container.
-Maybe we overlooked the sizing of the container and what is required by the demo to run correctly. The Java heap will not go beyond what we configured as the Xmx but for the native part it's another story: Metaspace, Code cache, GC structs, VM structs, there are plenty of reasons the spaces can grow. But increasing the container memory was not sufficient.
+First thing is to understand for which reason a pod is restarting. Looking at pod description (OOMkill) we could see that the culprit is the memory used by the pod exceeeds the limit of the container.
+Maybe we overlooked the sizing of the container and what is required by the demo to run correctly. The Java heap will not go beyond what we configured as the `Xmx` but for the native part it's another story: Metaspace, code cache, GC structs, VM structs, there are plenty of reasons the spaces can grow. But increasing the container memory was not sufficient.
 So a deeper analysis was required. Looking at all native spaces, Metaspace was the one that correlates the increase of RSS memory of the process:
 
 ![](/assets/2023/12/DebuggerDemoMetaspaceRSS.png)
 
-Do we have a class/classloader leak?
-Checking with the command `jcmd <pid> VM.metaspace` or looking at JFR recordings, the number of classes is still stable.
+Did we have a class/classloader leak?
+Checking with the command `jcmd <pid> VM.metaspace` or looking at JFR recordings, the number of classes were still stable.
 
-By default, Metaspace is unbounded: it can increase its size until there is no more memory on the host/container. But we can cap it with `-XX:MaxMetaspaceSize` JVM argument. Let's put somehting reasonable and avoid this OOMkill.
+By default, Metaspace is unbounded: It can increase its size until there is no more memory on the host/container. But we can cap it with `-XX:MaxMetaspaceSize` JVM argument. Let's put somehting reasonable and avoid this OOMkill.
 
-It turns out that we reach the maximum of the Metaspace and `OutOfMemoryError` (OOME) exception is thrown but leaving the process alive in a bad state. This is worse than the OOMkill in a container environement which will restart automatically the container.
+It turned out that we reached the maximum of the Metaspace and `OutOfMemoryError` (OOME) exception was thrown but leaving the process alive in a bad state. This was worse than the OOMkill in a container environement which will restart automatically the container.
 I was not sure if the Metaspace triggers a GC to reclaim unused classes in those circumstances, so I verified it into the OpenJDK code.
-The allocation for Metaspace happens using this [`Metaspace::allocate` method](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/memory/metaspace.cpp#L890) that attempt an allocation and if no allocation is possible because the Metaspace is full, it calls [`CollectedHeap::satisfy_failed_metadata_allocation` method](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/collectedHeap.cpp#L317) that will trigger a special VM operation: [`VM_CollectForMetadataAllocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/gcVMOperations.cpp#L231) at safepoint and will trigger a GC (for G1 a concurrent cycle otherwise a Full GC) with cause: `Metadata Threshold`. So if an OOME is thrown it means we have really not enough space or a leak is happening.
+The allocation for Metaspace happens using this [`Metaspace::allocate`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/memory/metaspace.cpp#L890)  method that attempt an allocation and if no allocation is possible because the Metaspace is full, it calls [`CollectedHeap::satisfy_failed_metadata_allocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/collectedHeap.cpp#L317)  method that will trigger a special VM operation: [`VM_CollectForMetadataAllocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/gcVMOperations.cpp#L231) at safepoint and will trigger a GC (for G1 a concurrent cycle otherwise a Full GC) with cause: `Metadata Threshold`. So if an OOME is thrown it means we have really not enough space or a leak is happening.
 
-The goal of our demo application is to verify that our instrumentation is working as expected. This instrumentation is done through a `ClassFileTransformer` registered through Instrumentation API. When a class is loaded, the transformer checks if we need to instrument or not this class. But what if the class is already loaded and we need to instrument it? In this case, we use the `retransformClasses` method. For our demos we are continuously (every minute) trying to retransform the same class to inject code.
+The goal of our demo application is to verify that our instrumentation is working as expected. This instrumentation is done through a [`java.lang.instrumentation.ClassFileTransformer`]() registered through Instrumentation API. When a class is loaded, the transformer checks if we need to instrument or not this class. But what if the class is already loaded and we need to instrument it? In this case, we use the [`Instrumentation::retransformClasses`]() method. For our demos we are continuously (every minute) trying to retransform the same class to inject code.
 
-Let's speed up the process by tight looping on this retransformation: Instantly, we are filling up the Metaspace and get OOME (when capped).
+Let's speed up the process by tight looping on this retransformation: Instantly, we were filling up the Metaspace and got OOME (when capped).
 
 Now, we have the source of this increase. But is it really a leak, or a problem with Metaspace fragmentation? (Link to Metapsace blog post form Thomas stuefe)
 
 ## Reproducer
 
-Even if the source is found, coming up with a PetClinic app saying there is a leak to an OpenJDK mailing list sounds not like a good idea. We need find a minimal reproducer that everybody can play with and try some small modifications to understand the root cause.
-Our demo is modified version of the original Petclinic. So I try to clone again the original version and try to reproduce our issue. But I failed. The original code of the class we are targeting to retransform does not include the thing that triggers our leak. Therefore the strategy for now on is to bisect the code to diff the trigger. Our modification is not
-huge so i can proceed step by step. I comment some large portion of code and try if the issue is still there. After several iterations I found the portion of code that seems to be the culprit:
+Even if the source is found, coming up with a PetClinic app saying there is a leak to an OpenJDK mailing list sounds not like a good idea. We needed to find a minimal reproducer that everybody can play with and try some small modifications to understand the root cause.
+Our demo is a modified version of the original Petclinic. So I tried to clone again the original version and try to reproduce our issue. But I failed. The original code of the class we are targeting to retransform was not including the thing that triggers our leak. Therefore the strategy then was to bisect the code to diff the trigger. Our modification is not huge so I could proceed step by step. I commented some large portions of code and tried if the issue was still there. After several iterations I found the portion of code that seems to be the culprit:
 
 ```
   private void syntheticSpan() {
