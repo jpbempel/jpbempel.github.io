@@ -11,27 +11,27 @@ I have recently chased a bug into [OpenJDK](https://github.com/openjdk/jdk) that
 
 ## Context
 
-At Datadog, I am working on Dynamic Instrumentation product. As the name suggest instrument any part of the code dynamically for inserting code that would capture execution context and state (stack traces, fields, arguments local variables), generate logs, metrics, span or span tags.
-On the JVM we are, of course, relying heavily on the instrumentation API for doing this, which gives us the advantage and guartanee that it is a supported API that is used since many years (introduced since JDK 1.5).
-We have in place, along our backend, a demo application (based on Spring [PetClinic](https://github.com/spring-projects/spring-petclinic)) that we are using to continuously verify that the basic features are working as expected.
+At Datadog, I am working on the Dynamic Instrumentation product. As the name suggests it instruments any part of the code dynamically by inserting code that captures execution context and the state (stack traces, fields, arguments local variables), generates logs, metrics, span or span tags.
+On the JVM, we are, of course, relying heavily on the instrumentation API for doing this, which is a supported API that is used since many years (introduced since JDK 1.5).
+We have in place, along our backend, a demo application (based on Spring [PetClinic](https://github.com/spring-projects/spring-petclinic)) used to continuously verify that the basic features are working as expected.
 One day, we noted that the pod that was running this demo, was periodically restarted. Our journey started!
 
 ## Troubleshooting
 
-First thing is to understand for which reason a pod is restarting. Looking at pod description (OOMkill) we could see that the culprit is the memory used by the pod exceeeds the limit of the container.
-Maybe we overlooked the sizing of the container and what is required by the demo to run correctly. The Java heap will not go beyond what we configured as the `Xmx` but for the native part it's another story: Metaspace, code cache, GC structs, VM structs, there are plenty of reasons the spaces can grow. But increasing the container memory was not sufficient.
-So a deeper analysis was required. Looking at all native spaces, Metaspace was the one that correlates the increase of RSS memory of the process:
+The first step is to understand for which reason a pod is restarting. Just by Looking at the pod description (OOMkill) we could see that the reason is that the memory used by the pod exceeds the limit of the container.
+Maybe we overlooked the sizing of the container and what is required by the demo to run correctly. The Java heap will not go beyond what we configured as the `Xmx` but for the native part, it's another story: Metaspace, code cache, GC structs, VM structs, there are plenty of reasons the spaces can grow. But increasing the container memory was not sufficient.
+So, a deeper analysis was required. While looking at all native spaces, Metaspace was the one that correlates the increase of RSS memory of the process:
 
 ![](/assets/2023/12/DebuggerDemoMetaspaceRSS.png)
 
 Did we have a class/classloader leak?
 Checking with the command `jcmd <pid> VM.metaspace` or looking at JFR recordings, the number of classes were still stable.
 
-By default, Metaspace is unbounded: It can increase its size until there is no more memory on the host/container. But we can cap it with `-XX:MaxMetaspaceSize` JVM argument. Let's put somehting reasonable and avoid this OOMkill.
+By default, Metaspace is unbounded: it can increase its size until there is no more memory on the host/container. But we can cap it with the `-XX:MaxMetaspaceSize` JVM argument. Let's put something reasonable to avoid this OOMkill.
 
-It turned out that we reached the maximum of the Metaspace and `OutOfMemoryError` (OOME) exception was thrown but leaving the process alive in a bad state. This was worse than the OOMkill in a container environement which will restart automatically the container.
+It turned out that we reached the maximum of the Metaspace and `OutOfMemoryError` (OOME) exception was thrown but leaving the process alive in a bad state. This was worse than the OOMkill in a container environment which will restart automatically the container.
 I was not sure if the Metaspace triggers a GC to reclaim unused classes in those circumstances, so I verified it into the OpenJDK code.
-The allocation for Metaspace happens using this [`Metaspace::allocate`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/memory/metaspace.cpp#L890)  method that attempt an allocation and if no allocation is possible because the Metaspace is full, it calls [`CollectedHeap::satisfy_failed_metadata_allocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/collectedHeap.cpp#L317)  method that will trigger a special VM operation: [`VM_CollectForMetadataAllocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/gcVMOperations.cpp#L231) at safepoint and will trigger a GC (for G1 a concurrent cycle otherwise a Full GC) with cause: `Metadata Threshold`. So if an OOME is thrown it means we have really not enough space or a leak is happening.
+The allocation for Metaspace happens using the [`Metaspace::allocate`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/memory/metaspace.cpp#L890)  method that attempts an allocation and if no allocation is possible because the Metaspace is full, it calls the [`CollectedHeap::satisfy_failed_metadata_allocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/collectedHeap.cpp#L317)  method that will trigger a special VM operation: [`VM_CollectForMetadataAllocation`](https://github.com/openjdk/jdk/blob/0678253bffca91775d29d2942f48c806ab4d2cab/src/hotspot/share/gc/shared/gcVMOperations.cpp#L231) at safepoint and will trigger a GC (for G1 a concurrent cycle, otherwise a Full GC) with cause: `Metadata Threshold`. So, if an OOME is thrown, it means we have really not enough space or a leak is happening.
 
 The goal of our demo application is to verify that our instrumentation is working as expected. This instrumentation is done through a [`java.lang.instrumentation.ClassFileTransformer`](https://docs.oracle.com/javase/8/docs/api/java/lang/instrument/ClassFileTransformer.html) registered through Instrumentation API. When a class is loaded, the transformer checks if we need to instrument or not this class. But what if the class is already loaded and we need to instrument it? In this case, we use the [`Instrumentation::retransformClasses`](https://docs.oracle.com/javase/8/docs/api/java/lang/instrument/Instrumentation.html#retransformClasses-java.lang.Class...-) method. For our demos we are continuously (every minute) trying to retransform the same class to inject code.
 
@@ -44,7 +44,7 @@ Here I recommend the read of the blog posts from Thomas Stuefe about [Metaspace]
 ## Reproducer
 
 Even if the source is found, coming up with a PetClinic app saying there is a leak to an OpenJDK mailing list sounds not like a good idea. We needed to find a minimal reproducer that everybody can play with and try some small modifications to understand the root cause.
-Our demo is a modified version of the original PetClinic. So I tried to clone again the original version and to reproduce our issue. But I failed. The original code of the class we are targeting to retransform was not including the thing that triggers our leak. Therefore the strategy was to bisect the code to diff the trigger. Our modification is not huge so I could proceed step by step. I commented some large portions of code and tried if the issue was still there. After several iterations I found the portion of code that seems to be the culprit:
+Our demo is a modified version of the original PetClinic. So I tried to clone again the original version and to reproduce our issue. But I failed. The original code of the class we are targeting to retransform was not including the thing that triggers our leak. Therefore the strategy was to bisect the code to diff the trigger. Our modification is not huge so I could proceed step by step. I commented some large portions of code and checked if the issue was still there. After several iterations I found the portion of code that seems to be the culprit:
 
 ```java
   private void syntheticSpan() {
@@ -118,8 +118,7 @@ With this setup, I could reproduce easily the leak and I could confidently repor
 
 ## Finding the root cause
 
-With that reproducer I was now confident that someone will find the exact root cause of this leak and a patch will be made for fixing it. My curiosity was too strong and I continue
-to investigate the leak to understand it. Let's focus on the try-with-resources: This is only a syntactic sugar, let's use a decompiler to get basic structure of an equivalent:
+With that reproducer, I was now confident that someone will find the exact root cause of this leak and a patch will be made for fixing it. My curiosity was too strong and I kept on investigating the leak to understand it. Let's focus on the try-with-resources: This is only a syntactic sugar, let's use a decompiler to get basic structure of an equivalent:
 
 ```java
   TWR var0 = new TWR();
@@ -136,8 +135,8 @@ to investigate the leak to understand it. Let's focus on the try-with-resources:
   var0.close();
 ```
 
-Playing now with this code, I noticed when I comment the line `var4.addSuppressed(var3);` it resolves the leak. Sounds like there is something fishy with that catch block.
-Using `catch` with `Throwable` is not something you do everyday, usually you are using a `catch (Exception ex)`.
+Playing now with this code, I noticed when I comment the line `var4.addSuppressed(var3);` the leak disapears. Sounds like there is something fishy with that catch block.
+Using `catch` with `Throwable` is not something you do everyday: usually you are using a `catch (Exception ex)`.
 let's try to focus more on this:
 
 ```java
@@ -152,11 +151,11 @@ class MyClass {
 }
 ```
 
-By just adding a `catch (Throwable t)` and using the throwable variable by calling a method I was able to leak the Metaspace during the retransformation! Here is my final minimal reproducer. Sounds stupidly silly!
-But what happens If I replace by the usual `Exception` instead of `Throwable`? No more leak!
+By just adding a `catch (Throwable t)` and using the throwable variable by calling a method, I was able to leak the Metaspace during the retransformation! Here is my final minimal reproducer. Sounds stupidly silly!
+But what happens if I replace by the usual `Exception` instead of `Throwable`? No more leak!
 
 
-With this minimal reproducer it was then easier to understand what's happening during the retransform operation. Though, I had no clue where to look into the JVM code to start digging. One idea was to use the JVM flag `-XX:+CrashOnOutOfMemoryError` that will give me more context on the `OutOfmemoryError` raised by the Metaspace.
+With this minimal reproducer, it was then easier to understand what's happening during the retransform operation. Though, I had no clue where to look into the JVM code to start digging. One idea was to use the JVM flag `-XX:+CrashOnOutOfMemoryError` that will give me more context on the `OutOfmemoryError` raised by the Metaspace.
 
 Here the stacktrace:
 ```
@@ -196,7 +195,7 @@ Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
 
 The lines `VM_RedefineClasses::merge_cp_and_rewrite` and `ConstantPool::allocate` give us a direction toward constant pools management during the `retransform` operation.
 
-Discussions with OpenJDK community helped me also to diagnostic what's going on at the JVM level. Using logging of the JVM provides good insight.
+Discussions with OpenJDK community helped me also to diagnose what's going on at the JVM level. Using logging of the JVM provides good insights.
 I ran with `-Xlog:redefine*` and the end of the output just before the OOME is the following:
 
 ```
@@ -215,14 +214,14 @@ I ran with `-Xlog:redefine*` and the end of the output just before the OOME is t
 [2.585s][info][redefine,class,load,exceptions] merge_cp_and_rewrite exception: 'java/lang/OutOfMemoryError'
 ```
 
-We can notice that the size of the constant pool (cp) used for retransforming the class is increasing linearly by 2 entries (old_cp_len) for each operation until... boom!
+You can notice that the size of the constant pool (cp) used for retransforming the class is increasing linearly by 2 entries (old_cp_len) for each operation until... boom!
 
 To help me navigate through the JVM code, I even profiled the reproducer to have a grasp of what's going on here:
 
 ![](/assets/2023/12/ProfileLeak.png)
 
-With this profile it seems more obvious that the `retransform` operation is done at safepoint and under Stop-The-World of application threads.
-With the logs and the profile we can correlate to find which method is doing the allocation that can leak to Metaspace.
+In this profile it seems more obvious that the `retransform` operation is done at safepoint and under Stop-The-World of application threads.
+With the logs and the profile, we can correlate to find which method is doing the allocation that can leak to Metaspace.
 
 ## The bug
 
@@ -265,20 +264,20 @@ Constant pool:
   #27 = Utf8               parseInt
 ```
 
-When you want to load a constant string into the stack to call a method, bytecode contains an instruction `ldc` followed  by the index inside the constant pool:
+When you want to load a constant string into the stack to call a method, the bytecode contains an instruction `ldc` followed  by the index inside the constant pool:
 `ldc #7`
 
-It allows to share this strings with other bytecode instruction and having a compact representation of the bytecode.
+It allows to share this strings with other bytecode instructions and having a compact representation of the bytecode.
 
 ### Merging constant pools
 
-When retransforming a class, bytecode may have changed so constant may have changed as well. We need to adjust entries: create additionals, remove unnecessaries. This is done by copying the original then merging. As entries of constant pool can reference each other, loading it involved also a pass for resolution. in the example above, entry #1
-`#1 = Methodref          #4.#21`
-reference entry #4 and #21, so we need to resolve it to get all information needed when a bytecode refernce this #1 entry like invoking this method.
+When retransforming a class, the bytecode may have changed so the constants may have changed as well. We need to adjust entries: create new ones and remove the unneeded. This is done by copying the original ones then do a merge. As entries can reference each other, loading the constant pool involved also a pass for resolution. In the example above, entry #1
+`#1 = Methodref #4.#21`
+references entry #4 and #21, so we need to resolve it to get all information needed when a bytecode references this #1 entry like invoking this method.
 
 For its internal representation the JVM is using some specific values to indicate the state of the constant pool entry resolved/unresolved.
 
-If we look at the stacktrace from our Metaspace OOM happenswe can see 
+If we look at the stacktrace from where the Metaspace OOM happens, we can see 
 
 ```
 ...
@@ -287,203 +286,9 @@ V [libjvm.so+0xae518c] VM_RedefineClasses::merge_cp_and_rewrite(InstanceKlass*, 
 ```
 
 `cp` stands for constant pool. Looks like a good entry point to navigate into the code and understands the process involved. 
-To understand the process of merging the constant pools you just have read the following comment found [here](https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L102-L292). This is like blog post:):
+To understand the process of merging the constant pools, you just have to read the following comment found [here](https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L102-L292). This is like a blog post:). To sum up, the merging process assume all entries are in unresolved state to be able to be compared one by one.
 
-```
-// Constant Pool Details:
-//
-// When the_class is redefined, we cannot just replace the constant
-// pool in the_class with the constant pool from scratch_class because
-// that could confuse obsolete methods that may still be running.
-// Instead, the constant pool from the_class, old_cp, is merged with
-// the constant pool from scratch_class, scratch_cp. The resulting
-// constant pool, merge_cp, replaces old_cp in the_class.
-//
-// The key part of any merging algorithm is the entry comparison
-// function so we have to know the types of entries in a constant pool
-// in order to merge two of them together. Constant pools can contain
-// up to 12 different kinds of entries; the JVM_CONSTANT_Unicode entry
-// is not presently used so we only have to worry about the other 11
-// entry types. For the purposes of constant pool merging, it is
-// helpful to know that the 11 entry types fall into 3 different
-// subtypes: "direct", "indirect" and "double-indirect".
-//
-// Direct CP entries contain data and do not contain references to
-// other CP entries. The following are direct CP entries:
-//     JVM_CONSTANT_{Double,Float,Integer,Long,Utf8}
-//
-// Indirect CP entries contain 1 or 2 references to a direct CP entry
-// and no other data. The following are indirect CP entries:
-//     JVM_CONSTANT_{Class,NameAndType,String}
-//
-// Double-indirect CP entries contain two references to indirect CP
-// entries and no other data. The following are double-indirect CP
-// entries:
-//     JVM_CONSTANT_{Fieldref,InterfaceMethodref,Methodref}
-//
-// When comparing entries between two constant pools, the entry types
-// are compared first and if they match, then further comparisons are
-// made depending on the entry subtype. Comparing direct CP entries is
-// simply a matter of comparing the data associated with each entry.
-// Comparing both indirect and double-indirect CP entries requires
-// recursion.
-//
-// Fortunately, the recursive combinations are limited because indirect
-// CP entries can only refer to direct CP entries and double-indirect
-// CP entries can only refer to indirect CP entries. The following is
-// an example illustration of the deepest set of indirections needed to
-// access the data associated with a JVM_CONSTANT_Fieldref entry:
-//
-//     JVM_CONSTANT_Fieldref {
-//         class_index => JVM_CONSTANT_Class {
-//             name_index => JVM_CONSTANT_Utf8 {
-//                 <data-1>
-//             }
-//         }
-//         name_and_type_index => JVM_CONSTANT_NameAndType {
-//             name_index => JVM_CONSTANT_Utf8 {
-//                 <data-2>
-//             }
-//             descriptor_index => JVM_CONSTANT_Utf8 {
-//                 <data-3>
-//             }
-//         }
-//     }
-//
-// The above illustration is not a data structure definition for any
-// computer language. The curly braces ('{' and '}') are meant to
-// delimit the context of the "fields" in the CP entry types shown.
-// Each indirection from the JVM_CONSTANT_Fieldref entry is shown via
-// "=>", e.g., the class_index is used to indirectly reference a
-// JVM_CONSTANT_Class entry where the name_index is used to indirectly
-// reference a JVM_CONSTANT_Utf8 entry which contains the interesting
-// <data-1>. In order to understand a JVM_CONSTANT_Fieldref entry, we
-// have to do a total of 5 indirections just to get to the CP entries
-// that contain the interesting pieces of data and then we have to
-// fetch the three pieces of data. This means we have to do a total of
-// (5 + 3) * 2 == 16 dereferences to compare two JVM_CONSTANT_Fieldref
-// entries.
-//
-// Here is the indirection, data and dereference count for each entry
-// type:
-//
-//    JVM_CONSTANT_Class               1 indir, 1 data, 2 derefs
-//    JVM_CONSTANT_Double              0 indir, 1 data, 1 deref
-//    JVM_CONSTANT_Fieldref            2 indir, 3 data, 8 derefs
-//    JVM_CONSTANT_Float               0 indir, 1 data, 1 deref
-//    JVM_CONSTANT_Integer             0 indir, 1 data, 1 deref
-//    JVM_CONSTANT_InterfaceMethodref  2 indir, 3 data, 8 derefs
-//    JVM_CONSTANT_Long                0 indir, 1 data, 1 deref
-//    JVM_CONSTANT_Methodref           2 indir, 3 data, 8 derefs
-//    JVM_CONSTANT_NameAndType         1 indir, 2 data, 4 derefs
-//    JVM_CONSTANT_String              1 indir, 1 data, 2 derefs
-//    JVM_CONSTANT_Utf8                0 indir, 1 data, 1 deref
-//
-// So different subtypes of CP entries require different amounts of
-// work for a proper comparison.
-//
-// Now that we've talked about the different entry types and how to
-// compare them we need to get back to merging. This is not a merge in
-// the "sort -u" sense or even in the "sort" sense. When we merge two
-// constant pools, we copy all the entries from old_cp to merge_cp,
-// preserving entry order. Next we append all the unique entries from
-// scratch_cp to merge_cp and we track the index changes from the
-// location in scratch_cp to the possibly new location in merge_cp.
-// When we are done, any obsolete code that is still running that
-// uses old_cp should not be able to observe any difference if it
-// were to use merge_cp. As for the new code in scratch_class, it is
-// modified to use the appropriate index values in merge_cp before it
-// is used to replace the code in the_class.
-//
-// There is one small complication in copying the entries from old_cp
-// to merge_cp. Two of the CP entry types are special in that they are
-// lazily resolved. Before explaining the copying complication, we need
-// to digress into CP entry resolution.
-//
-// JVM_CONSTANT_Class entries are present in the class file, but are not
-// stored in memory as such until they are resolved. The entries are not
-// resolved unless they are used because resolution is expensive. During class
-// file parsing the entries are initially stored in memory as
-// JVM_CONSTANT_ClassIndex and JVM_CONSTANT_StringIndex entries. These special
-// CP entry types indicate that the JVM_CONSTANT_Class and JVM_CONSTANT_String
-// entries have been parsed, but the index values in the entries have not been
-// validated. After the entire constant pool has been parsed, the index
-// values can be validated and then the entries are converted into
-// JVM_CONSTANT_UnresolvedClass and JVM_CONSTANT_String
-// entries. During this conversion process, the UTF8 values that are
-// indirectly referenced by the JVM_CONSTANT_ClassIndex and
-// JVM_CONSTANT_StringIndex entries are changed into Symbol*s and the
-// entries are modified to refer to the Symbol*s. This optimization
-// eliminates one level of indirection for those two CP entry types and
-// gets the entries ready for verification.  Verification expects to
-// find JVM_CONSTANT_UnresolvedClass but not JVM_CONSTANT_Class entries.
-//
-// Now we can get back to the copying complication. When we copy
-// entries from old_cp to merge_cp, we have to revert any
-// JVM_CONSTANT_Class entries to JVM_CONSTANT_UnresolvedClass entries
-// or verification will fail.
-//
-// It is important to explicitly state that the merging algorithm
-// effectively unresolves JVM_CONSTANT_Class entries that were in the
-// old_cp when they are changed into JVM_CONSTANT_UnresolvedClass
-// entries in the merge_cp. This is done both to make verification
-// happy and to avoid adding more brittleness between RedefineClasses
-// and the constant pool cache. By allowing the constant pool cache
-// implementation to (re)resolve JVM_CONSTANT_UnresolvedClass entries
-// into JVM_CONSTANT_Class entries, we avoid having to embed knowledge
-// about those algorithms in RedefineClasses.
-//
-// Appending unique entries from scratch_cp to merge_cp is straight
-// forward for direct CP entries and most indirect CP entries. For the
-// indirect CP entry type JVM_CONSTANT_NameAndType and for the double-
-// indirect CP entry types, the presence of more than one piece of
-// interesting data makes appending the entries more complicated.
-//
-// For the JVM_CONSTANT_{Double,Float,Integer,Long,Utf8} entry types,
-// the entry is simply copied from scratch_cp to the end of merge_cp.
-// If the index in scratch_cp is different than the destination index
-// in merge_cp, then the change in index value is tracked.
-//
-// Note: the above discussion for the direct CP entries also applies
-// to the JVM_CONSTANT_UnresolvedClass entry types.
-//
-// For the JVM_CONSTANT_Class entry types, since there is only
-// one data element at the end of the recursion, we know that we have
-// either one or two unique entries. If the JVM_CONSTANT_Utf8 entry is
-// unique then it is appended to merge_cp before the current entry.
-// If the JVM_CONSTANT_Utf8 entry is not unique, then the current entry
-// is updated to refer to the duplicate entry in merge_cp before it is
-// appended to merge_cp. Again, any changes in index values are tracked
-// as needed.
-//
-// Note: the above discussion for JVM_CONSTANT_Class entry
-// types is theoretical. Since those entry types have already been
-// optimized into JVM_CONSTANT_UnresolvedClass entry types,
-// they are handled as direct CP entries.
-//
-// For the JVM_CONSTANT_NameAndType entry type, since there are two
-// data elements at the end of the recursions, we know that we have
-// between one and three unique entries. Any unique JVM_CONSTANT_Utf8
-// entries are appended to merge_cp before the current entry. For any
-// JVM_CONSTANT_Utf8 entries that are not unique, the current entry is
-// updated to refer to the duplicate entry in merge_cp before it is
-// appended to merge_cp. Again, any changes in index values are tracked
-// as needed.
-//
-// For the JVM_CONSTANT_{Fieldref,InterfaceMethodref,Methodref} entry
-// types, since there are two indirect CP entries and three data
-// elements at the end of the recursions, we know that we have between
-// one and six unique entries. See the JVM_CONSTANT_Fieldref diagram
-// above for an example of all six entries. The uniqueness algorithm
-// for the JVM_CONSTANT_Class and JVM_CONSTANT_NameAndType entries is
-// covered above. Any unique entries are appended to merge_cp before
-// the current entry. For any entries that are not unique, the current
-// entry is updated to refer to the duplicate entry in merge_cp before
-// it is appended to merge_cp. Again, any changes in index values are
-// tracked as needed.
-```
-
-In our case we are referencing with a `Methodref` the `Throwable` class, and David Holmes from Oracle pointed us to the class verifier, in [`ClassVerifier::verify_exception_handler_table`](https://github.com/openjdk/jdk/blob/cdd1a6e851bcaf4a25d4a405b8ee0b0d5b83a4a9/src/hotspot/share/classfile/verifier.cpp#L1894-L1901):
+In our case, we are referencing with a `Methodref` the `Throwable` class, and David Holmes from Oracle pointed us to the class verifier, in [`ClassVerifier::verify_exception_handler_table`](https://github.com/openjdk/jdk/blob/cdd1a6e851bcaf4a25d4a405b8ee0b0d5b83a4a9/src/hotspot/share/classfile/verifier.cpp#L1894-L1901):
 
 ```
       VerificationType throwable =
@@ -495,19 +300,19 @@ In our case we are referencing with a `Methodref` the `Throwable` class, and Dav
         cp->klass_at(catch_type_index, CHECK);
       }
 ```
-Basically the verifier will pre-resolve a Throwable class in the constant pool in case of a caught `OutOfMemoryError`. In that case we don't want to do a resolution that could fail because of new potential allocations...
+Basically, the verifier will pre-resolve a Throwable class in the constant pool in case of a caught `OutOfMemoryError`. In that case, we don't want to do a resolution that could fail because of new potential allocations...
 
-`Throawble` is therefore the only class resolved into the constant pool, but with the process described above it means the entry comparison will fail and generate new entries in the merged constant pool, allocting new buffers, and each time for every retransformation... here the leak!
+`Throawble` is therefore the only class resolved into the constant pool, but with the process described above, it means the entry comparison will fail and generate new entries in the merged constant pool, allocating new buffers, and each time for every retransformation... here the leak!
 
 ### The fix
 
-After some discussions, specially with Coleen Phillimore about the bug and attempts to fix it, she directs me toward a simple fix:
-Make sure all entries in the constant pool that are related to `Class` are marked as unresolved even if this is a Throwable class during the comparison/merge
-you can find the PR merged [here](https://github.com/openjdk/jdk/pull/14780).
+After some discussions, especially with Coleen Phillimore about the bug and attempts to fix it, she directs me toward a simple fix:
+make sure all entries in the constant pool that are related to `Class` are marked as unresolved even if this is a Throwable class during the comparison/merge
+You can find the PR merged [here](https://github.com/openjdk/jdk/pull/14780).
 
 ## Conclusion
 
-This long standing memory leak was an interesting journey in all phases: diagnostic, reproduciblity, understanding and fix. The OpenJDK team was also very helpful to understand and prepare the fix.
+This long standing memory leak was an interesting journey during all phases: diagnostic, reproductibility, understanding and fix. The OpenJDK team was also very helpful to understand and prepare the fix.
 
 ## References
 
