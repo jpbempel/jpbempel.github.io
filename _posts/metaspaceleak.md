@@ -322,3 +322,5 @@ This long standing memory leak was an interesting journey during all phases: dia
 * [Redefine/Retranform process, big comment in source code](https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L35-L324)
 * [What is Metaspace](https://stuefe.de/posts/metaspace/what-is-metaspace/) by [Thomas Stuefe](https://twitter.com/tstuefe)
 * [Metaspace Architecture](https://stuefe.de/posts/metaspace/metaspace-architecture/) by [Thomas Stuefe](https://twitter.com/tstuefe)
+
+Thanks to [Christophe Nasarre](https://twitter.com/chnasarre) & [Marcus Hirt](https://twitter.com/hirt) for the review.
