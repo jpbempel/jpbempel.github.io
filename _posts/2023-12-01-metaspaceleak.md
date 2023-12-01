@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Chasing a Metaspace leak"
-date: 2023-12-?
+date: 2023-12-01
 ---
 # Chasing a Metaspace leak
 
