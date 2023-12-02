@@ -318,7 +318,7 @@ This long standing memory leak was an interesting journey during all phases: dia
 
 * [Report of the leak in OpenJDK mailing list](https://mail.openjdk.org/pipermail/hotspot-dev/2023-May/074576.html)
 * [Ticket in JDK Bug System](https://bugs.openjdk.org/browse/JDK-8308762)
-* [Pull Request in OpenJDK repostiory](https://github.com/openjdk/jdk/pull/14780)
+* [Pull Request in OpenJDK repository](https://github.com/openjdk/jdk/pull/14780)
 * [Redefine/Retranform process, big comment in source code](https://github.com/openjdk/jdk/blob/a4bd9e4d0bca0218f27a405b8154425441c10f3f/src/hotspot/share/prims/jvmtiRedefineClasses.hpp#L35-L324)
 * [What is Metaspace](https://stuefe.de/posts/metaspace/what-is-metaspace/) by [Thomas Stuefe](https://twitter.com/tstuefe)
 * [Metaspace Architecture](https://stuefe.de/posts/metaspace/metaspace-architecture/) by [Thomas Stuefe](https://twitter.com/tstuefe)
