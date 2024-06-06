@@ -12,6 +12,9 @@
 
 <table style="border: 0px">
     <tr>
+      <td style="border: 0px">Apr 2023</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/Generational%20Z%20GC.pdf">Generational Z GC</a></td>
+    </tr>
+    <tr>
       <td style="border: 0px">Apr 2023</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/Mastering%20GC_%20tame%20the%20beast%20and%20make%20it%20your%20best%20ally.pdf">Mastering GC: tame the beast and make it your best ally</a></td>
     </tr>
     <tr>
