@@ -14,3 +14,5 @@ Developer passionate by performance, runtimes (JVM, CLR) and Mechanical Sympathy
 [Linkedin](https://www.linkedin.com/in/jeanphilippebempel/)
 
 [Mastodon](https://mastodon.online/@jpbempel)
+
+[BlueSky](https://bsky.app/profile/jpbempel.bsky.social)
