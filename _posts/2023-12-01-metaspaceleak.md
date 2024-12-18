@@ -302,7 +302,7 @@ In our case, we are referencing with a `Methodref` the `Throwable` class, and Da
 ```
 Basically, the verifier will pre-resolve a Throwable class in the constant pool in case of a caught `OutOfMemoryError`. In that case, we don't want to do a resolution that could fail because of new potential allocations...
 
-`Throawble` is therefore the only class resolved into the constant pool, but with the process described above, it means the entry comparison will fail and generate new entries in the merged constant pool, allocating new buffers, and each time for every retransformation... that's the leak!
+`Throwable` is therefore the only class resolved into the constant pool, but with the process described above, it means the entry comparison will fail and generate new entries in the merged constant pool, allocating new buffers, and each time for every retransformation... that's the leak!
 
 ### The fix
 
