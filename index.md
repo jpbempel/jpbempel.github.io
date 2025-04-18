@@ -12,7 +12,7 @@
 
 <table style="border: 0px">
     <tr>
-      <td style="border: 0px">Apr 2025</td><td style="border: 0px"><a href="https://ginnieandfifounet.com/jpb/slides/Production%20Debugging.pdf">Production Debugging</a></td>
+      <td style="border: 0px">Apr 2025</td><td style="border: 0px"><a href="https://ginnieandfifounet.com/jpb/slides/Production_Debugging.pdf">Production Debugging</a></td>
     </tr>
     <tr>
       <td style="border: 0px">May 2024</td><td style="border: 0px"><a href="https://www.ginnieandfifounet.com/jpb/slides/Generational%20Z%20GC.pdf">Generational Z GC</a></td>
